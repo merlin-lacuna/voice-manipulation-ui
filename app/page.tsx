@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Loader2, CheckCircle, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { checkApiStatus } from "@/lib/api-client"
 
 // Types
 type CardType = {
@@ -30,27 +31,8 @@ type GhostCardType = {
   isAnimating: boolean
 }
 
-// Mock API call
-const callAPI = async (cardName: string, zoneName: string, laneName: string) => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 2000))
-
-  // Different responses based on zone
-  switch (zoneName) {
-    case "Zone 1":
-      return `${cardName} has been initialized in ${laneName} of ${zoneName}. Processing has begun.`
-    case "Zone 2":
-      return `${cardName} is now in the second phase. It was moved to ${laneName} of ${zoneName}.`
-    case "Zone 3":
-      return `Processing continues for ${cardName}. Current position: ${laneName} in ${zoneName}.`
-    case "Zone 4":
-      return `Someone just moved a card. It was ${cardName} and they dropped it into ${zoneName}, and more specifically ${laneName}.`
-    case "Zone 5":
-      return `Final stage reached! ${cardName} has completed processing in ${laneName} of ${zoneName}.`
-    default:
-      return `${cardName} was moved to ${laneName} of ${zoneName}.`
-  }
-}
+// Import API client
+import { processVoice } from "@/lib/api-client"
 
 export default function Home() {
   // Initial cards in the holding zone
@@ -67,6 +49,21 @@ export default function Home() {
   const [apiMessage, setApiMessage] = useState<string>("")
   const [glowingZone, setGlowingZone] = useState<string | null>(null)
   const [invalidZone, setInvalidZone] = useState<string | null>(null)
+  const [apiStatus, setApiStatus] = useState<boolean | null>(null)
+
+  // Check API status on initial load and periodically
+  useEffect(() => {
+    const checkStatus = async () => {
+      const status = await checkApiStatus();
+      setApiStatus(status);
+    };
+    
+    // Check immediately and then every 10 seconds
+    checkStatus();
+    const interval = setInterval(checkStatus, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // For ghost card animation
   const [ghostCard, setGhostCard] = useState<GhostCardType | null>(null)
@@ -182,9 +179,17 @@ export default function Home() {
         setTimeout(() => setGlowingZone(null), 1000)
 
         // Call API and update message
-        callAPI(card.content, destZoneId, `Lane ${destLaneId}`).then((message) => {
+        processVoice({
+          cardName: card.content,
+          zoneName: destZoneId,
+          laneName: `Lane ${destLaneId}`
+        }).then((message) => {
           setApiMessage(message)
           // Clear processing state after API call completes
+          setProcessingCard({ id: null, zone: null, lane: null })
+        }).catch((error) => {
+          // Handle API errors
+          setApiMessage(`Error: ${error.message}`)
           setProcessingCard({ id: null, zone: null, lane: null })
         })
 
@@ -198,7 +203,15 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-2xl font-bold mb-6">Voice Manipulation UI</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Voice Manipulation UI</h1>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium">API Status:</span>
+          {apiStatus === null && <Loader2 className="h-5 w-5 animate-spin text-gray-500" />}
+          {apiStatus === true && <CheckCircle className="h-5 w-5 text-green-500" />}
+          {apiStatus === false && <XCircle className="h-5 w-5 text-red-500" />}
+        </div>
+      </div>
 
       {apiMessage && (
         <div className="mb-6 p-4 bg-slate-100 rounded-lg">
