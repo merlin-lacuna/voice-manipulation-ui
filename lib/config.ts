@@ -6,7 +6,7 @@
  * Lane numbers are 1-based (Lane 1, Lane 2, Lane 3)
  */
 export const stickyLanesConfig: Record<string, number[]> = {
-  "Zone 1": [3]     // Lane 3 in Zone 1 is sticky
+  "Zone 3": [3]     // Lane 3 in Zone 1 is sticky
   // "Zone 2": [2, 3],   Lanes 2 and 3 in Zone 2 are sticky
   // "Zone 3": [1]       Lane 1 in Zone 3 is sticky
 }
