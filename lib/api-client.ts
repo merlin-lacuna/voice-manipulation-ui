@@ -3,22 +3,32 @@
 // The base API URL can be configured via environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-interface ProcessRequestParams {
+export interface ProcessRequestParams {
   cardName: string;
   zoneName: string;
   laneName: string;
 }
 
-interface ProcessResponse {
+export interface MetadataItem {
+  charisma: number;
+  confidence: number;
+  pitch: number;
+  energy: number;
+  spectrogram: string;
+}
+
+export interface ProcessResponse {
   message: string;
   status: string;
   processingTime: number;
+  audioFile?: string;
+  metadata?: MetadataItem;
 }
 
 /**
  * Process a voice card by sending a request to the backend API
  */
-export async function processVoice(params: ProcessRequestParams): Promise<string> {
+export async function processVoice(params: ProcessRequestParams): Promise<ProcessResponse> {
   const response = await fetch(`${API_BASE_URL}/api/process`, {
     method: 'POST',
     headers: {
@@ -34,7 +44,47 @@ export async function processVoice(params: ProcessRequestParams): Promise<string
   }
 
   const data: ProcessResponse = await response.json();
-  return data.message;
+  
+  // Convert relative URLs to absolute
+  if (data.audioFile) {
+    data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+  }
+  
+  return data;
+}
+
+/**
+ * Play an audio file
+ */
+export async function playAudio(url: string): Promise<void> {
+  console.log('Playing audio from URL:', url);
+  
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(url);
+    
+    audio.onended = () => {
+      console.log('Audio playback completed');
+      resolve();
+    };
+    
+    audio.onloadeddata = () => {
+      console.log('Audio loaded successfully');
+    };
+    
+    audio.onerror = (error) => {
+      console.error('Audio error:', error);
+      console.error('Error code:', audio.error?.code);
+      console.error('Error message:', audio.error?.message);
+      reject(new Error(`Failed to play audio: ${audio.error?.message || 'Unknown error'}`));
+    };
+    
+    audio.play()
+      .then(() => console.log('Audio playback started'))
+      .catch(error => {
+        console.error('Failed to start audio playback:', error);
+        reject(error);
+      });
+  });
 }
 
 /**

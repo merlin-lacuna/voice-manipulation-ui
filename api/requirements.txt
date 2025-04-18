@@ -4,3 +4,6 @@ python-dotenv==1.0.1
 pydantic==2.6.4
 requests==2.31.0
 python-multipart==0.0.9
+librosa==0.10.1
+soundfile==0.12.1
+numpy==1.26.4

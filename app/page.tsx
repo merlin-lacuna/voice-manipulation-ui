@@ -3,9 +3,12 @@
 import { useState, useRef, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
-import { Loader2, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, Volume2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { checkApiStatus } from "@/lib/api-client"
+import { checkApiStatus, processVoice, playAudio, MetadataItem, ProcessResponse } from "@/lib/api-client"
+import { MasterDetailsSection } from "@/components/ui/master-details"
+import { ZoneSeparator } from "@/components/ui/zone-separator"
+import { DebugPanel } from "@/components/ui/debug-panel"
 
 // Types
 type CardType = {
@@ -31,17 +34,18 @@ type GhostCardType = {
   isAnimating: boolean
 }
 
-// Import API client
-import { processVoice } from "@/lib/api-client"
+type ZoneMetadataType = {
+  [key: string]: {
+    [key: string]: MetadataItem
+  }
+}
 
 export default function Home() {
-  // Initial cards in the holding zone
+  // Initial cards in the holding zone (reduced to 3 voices)
   const initialCards: CardType[] = [
-    { id: "voice-a", content: "Voice A", zone: "holding", lane: "1" },
-    { id: "voice-b", content: "Voice B", zone: "holding", lane: "2" },
-    { id: "voice-c", content: "Voice C", zone: "holding", lane: "3" },
-    { id: "voice-d", content: "Voice D", zone: "holding", lane: "4" },
-    { id: "voice-e", content: "Voice E", zone: "holding", lane: "5" },
+    { id: "voice-1", content: "Voice 1", zone: "holding", lane: "Lane 1" },
+    { id: "voice-2", content: "Voice 2", zone: "holding", lane: "Lane 1" },
+    { id: "voice-3", content: "Voice 3", zone: "holding", lane: "Lane 1" },
   ]
 
   const [cards, setCards] = useState<CardType[]>(initialCards)
@@ -50,6 +54,29 @@ export default function Home() {
   const [glowingZone, setGlowingZone] = useState<string | null>(null)
   const [invalidZone, setInvalidZone] = useState<string | null>(null)
   const [apiStatus, setApiStatus] = useState<boolean | null>(null)
+  const [selectedVoiceCard, setSelectedVoiceCard] = useState<string | null>(null)
+  
+  // State for zone completion
+  const [zoneCompletions, setZoneCompletions] = useState<{ [key: string]: number }>({
+    "Zone 1": 0,
+    "Zone 2": 0, 
+    "Zone 3": 0,
+    "Zone 4": 0
+  })
+  
+  // State for zone visibility - now all zones are visible by default
+  const [zoneVisibility, setZoneVisibility] = useState<{ [key: string]: boolean }>({
+    "Zone 1": true,
+    "Zone 2": true,
+    "Zone 3": true,
+    "Zone 4": true
+  })
+  
+  // State for storing metadata for each zone/lane combination
+  const [zoneMetadata, setZoneMetadata] = useState<ZoneMetadataType>({})
+  
+  // State for audio files
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null)
 
   // Check API status on initial load and periodically
   useEffect(() => {
@@ -71,8 +98,8 @@ export default function Home() {
   const cardPositionsRef = useRef(new Map<string, DOMRect>())
 
   // Define zones and lanes
-  const zones = ["holding", "Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"]
-  const lanes = ["Lane 1", "Lane 2", "Lane 3", "Lane 4", "Lane 5"]
+  const zones = ["holding", "Zone 1", "Zone 2", "Zone 3", "Zone 4"]
+  const lanes = ["Lane 1", "Lane 2", "Lane 3"]
 
   // Track mouse position during drag
   useEffect(() => {
@@ -95,19 +122,47 @@ export default function Home() {
       return () => clearTimeout(timer)
     }
   }, [ghostCard])
+  
+  // Function to check zone completion for progress tracker
+  useEffect(() => {
+    // Check for zone completion to update the progress tracker
+    const checkZoneCompletion = () => {
+      // Count unique voices in each zone
+      const uniqueVoicesInZone = (zoneName: string) => {
+        const voicesInZone = cards
+          .filter(card => card.zone === zoneName)
+          .map(card => card.content);
+        return new Set(voicesInZone).size;
+      };
+      
+      // Update zone completion counts
+      const zone1Cards = uniqueVoicesInZone("Zone 1");
+      const zone2Cards = uniqueVoicesInZone("Zone 2");
+      const zone3Cards = uniqueVoicesInZone("Zone 3");
+      const zone4Cards = uniqueVoicesInZone("Zone 4");
+      
+      setZoneCompletions({
+        "Zone 1": zone1Cards,
+        "Zone 2": zone2Cards,
+        "Zone 3": zone3Cards,
+        "Zone 4": zone4Cards
+      });
+      
+      // All zones are now visible by default, so we don't need to update visibility
+    };
+    
+    checkZoneCompletion();
+  }, [cards]);
 
   const isValidMove = (sourceZone: string, destinationZone: string) => {
     // Allow moving from any zone back to the holding zone
     if (destinationZone === "holding") return true
 
-    // Allow moving from holding zone to Zone 1
-    if (sourceZone === "holding" && destinationZone === "Zone 1") return true
-
-    const sourceIndex = zones.indexOf(sourceZone)
-    const destIndex = zones.indexOf(destinationZone)
-
-    // Can only move to adjacent zones (next or previous)
-    return Math.abs(sourceIndex - destIndex) === 1
+    // Allow moving from holding zone to any zone
+    if (sourceZone === "holding") return true
+    
+    // Allow moving between zones freely
+    return true
   }
 
   const handleDragStart = (start: any) => {
@@ -120,6 +175,76 @@ export default function Home() {
         cardPositionsRef.current.set(id, el.getBoundingClientRect())
       }
     })
+  }
+  
+  // Handle clicking a card in holding zone to play original audio
+  const handleCardClick = async (card: CardType) => {
+    if (card.zone === "holding") {
+      setPlayingAudio(card.id)
+      setApiMessage(`Loading ${card.content} audio...`) // Show loading message
+      
+      try {
+        // Call API to get original audio
+        const response = await processVoice({
+          cardName: card.content,
+          zoneName: "holding",
+          laneName: card.lane // Lane is now already in the format "Lane X"
+        })
+        
+        console.log("Got API response for audio:", response)
+        
+        // Check if the API call was successful
+        if (response.status === "error") {
+          throw new Error(response.message || "API returned an error");
+        }
+        
+        // Play the audio if available
+        if (response.audioFile) {
+          try {
+            setApiMessage(`Playing ${card.content}...`)
+            
+            // Create an Audio element to test if the file exists
+            const audio = new Audio(response.audioFile);
+            
+            // Set up event listeners
+            audio.oncanplaythrough = async () => {
+              console.log("Audio can play through, starting playback");
+              try {
+                await playAudio(response.audioFile as string);
+                setApiMessage(`Finished playing ${card.content}`);
+              } catch (playError) {
+                console.error("Playback error:", playError);
+                setApiMessage(`Error during playback: ${playError instanceof Error ? playError.message : String(playError)}`);
+              }
+            };
+            
+            audio.onerror = (e) => {
+              console.error("Audio loading error:", e, audio.error);
+              setApiMessage(`Error loading audio file for ${card.content}`);
+              throw new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`);
+            };
+            
+            // Start loading the audio
+            audio.load();
+          } catch (audioError) {
+            console.error("Audio setup error:", audioError);
+            setApiMessage(`Error setting up audio for ${card.content}: ${audioError instanceof Error ? audioError.message : String(audioError)}`);
+          }
+        } else {
+          setApiMessage(`No audio file returned for ${card.content}`);
+        }
+      } catch (error) {
+        console.error("Card click error:", error);
+        setApiMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        setTimeout(() => {
+          setPlayingAudio(null);
+        }, 1000); // Give a delay before clearing the playing state
+      }
+    } else {
+      // If card is in a processing zone, select it to show in master details
+      setSelectedVoiceCard(card.content);
+    }
   }
 
   const handleDragEnd = async (result: any) => {
@@ -159,7 +284,14 @@ export default function Home() {
 
     const sourceZoneId = source.droppableId.split("-")[0]
     const destZoneId = destination.droppableId.split("-")[0]
-    const destLaneId = destination.droppableId.split("-")[1]
+    
+    // Get the lane from the droppable ID
+    let destLaneName = "Lane 1";
+    if (destZoneId !== "holding") {
+      // Extract lane number from droppable ID (e.g., "Zone 1-1" -> "Lane 1")
+      const destLaneNumber = destination.droppableId.split("-")[1];
+      destLaneName = `Lane ${destLaneNumber}`;
+    }
 
     // Update card position
     const updatedCards = cards.map((card) => {
@@ -167,24 +299,43 @@ export default function Home() {
         // If moving to holding zone, clear the API message
         if (destZoneId === "holding") {
           setApiMessage("")
-          return { ...card, zone: "holding", lane: destLaneId }
+          return { ...card, zone: "holding", lane: card.lane }
         }
 
-        // Only set processing state and call API if not moving to holding zone
         // Set processing state
-        setProcessingCard({ id: card.id, zone: destZoneId, lane: `Lane ${destLaneId}` })
+        setProcessingCard({ id: card.id, zone: destZoneId, lane: destLaneName })
+        
+        // Select the voice card to show in master details
+        setSelectedVoiceCard(card.content)
 
         // Trigger zone glow effect
         setGlowingZone(destZoneId)
         setTimeout(() => setGlowingZone(null), 1000)
 
-        // Call API and update message
+        // Call API and process response
         processVoice({
           cardName: card.content,
           zoneName: destZoneId,
-          laneName: `Lane ${destLaneId}`
-        }).then((message) => {
-          setApiMessage(message)
+          laneName: destLaneName
+        }).then((response: ProcessResponse) => {
+          setApiMessage(response.message)
+          
+          // Store metadata if available
+          if (response.metadata) {
+            setZoneMetadata(prev => ({
+              ...prev,
+              [destZoneId]: {
+                ...(prev[destZoneId] || {}),
+                [card.content]: response.metadata as MetadataItem
+              }
+            }))
+          }
+          
+          // Play audio if available
+          if (response.audioFile) {
+            playAudio(response.audioFile)
+          }
+          
           // Clear processing state after API call completes
           setProcessingCard({ id: null, zone: null, lane: null })
         }).catch((error) => {
@@ -193,7 +344,7 @@ export default function Home() {
           setProcessingCard({ id: null, zone: null, lane: null })
         })
 
-        return { ...card, zone: destZoneId, lane: `Lane ${destLaneId}` }
+        return { ...card, zone: destZoneId, lane: destLaneName }
       }
       return card
     })
@@ -202,56 +353,61 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Voice Manipulation UI</h1>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium">API Status:</span>
-          {apiStatus === null && <Loader2 className="h-5 w-5 animate-spin text-gray-500" />}
-          {apiStatus === true && <CheckCircle className="h-5 w-5 text-green-500" />}
-          {apiStatus === false && <XCircle className="h-5 w-5 text-red-500" />}
+    <div className="flex h-screen overflow-hidden bg-indigo-800 text-white">
+      {/* Main scrollable content area */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold">VOCAL BOX BIAS</h1>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium">API Status:</span>
+            {apiStatus === null && <Loader2 className="h-5 w-5 animate-spin text-gray-300" />}
+            {apiStatus === true && <CheckCircle className="h-5 w-5 text-green-300" />}
+            {apiStatus === false && <XCircle className="h-5 w-5 text-red-300" />}
+          </div>
         </div>
-      </div>
+        
+        <p className="text-lg mb-8">
+          Pick up the voices and place them in one of the boxes
+        </p>
 
-      {apiMessage && (
-        <div className="mb-6 p-4 bg-slate-100 rounded-lg">
-          <p>{apiMessage}</p>
-        </div>
-      )}
+        {apiMessage && (
+          <div className="mb-6 p-4 bg-indigo-700 rounded-lg border border-indigo-600">
+            <p>{apiMessage}</p>
+          </div>
+        )}
 
-      {/* Ghost Card for Animation */}
-      {ghostCard && (
-        <div
-          className={`fixed pointer-events-none z-50 transition-all duration-500 ease-in-out ${ghostCard.isAnimating ? "opacity-100" : "opacity-0"}`}
-          style={{
-            left: ghostCard.isAnimating ? ghostCard.endX : ghostCard.startX,
-            top: ghostCard.isAnimating ? ghostCard.endY : ghostCard.startY,
-            transform: "translate(-50%, -50%)",
-            width: "200px",
-            transition: "left 500ms ease-in-out, top 500ms ease-in-out",
-          }}
-        >
-          <Card className="p-3 bg-white shadow-md">
-            <p className="font-medium">{ghostCard.content}</p>
-          </Card>
-        </div>
-      )}
+        {/* Ghost Card for Animation */}
+        {ghostCard && (
+          <div
+            className={`fixed pointer-events-none z-50 transition-all duration-500 ease-in-out ${ghostCard.isAnimating ? "opacity-100" : "opacity-0"}`}
+            style={{
+              left: ghostCard.isAnimating ? ghostCard.endX : ghostCard.startX,
+              top: ghostCard.isAnimating ? ghostCard.endY : ghostCard.startY,
+              transform: "translate(-50%, -50%)",
+              width: "200px",
+              transition: "left 500ms ease-in-out, top 500ms ease-in-out",
+            }}
+          >
+            <Card className="p-3 bg-white shadow-md">
+              <p className="font-medium">{ghostCard.content}</p>
+            </Card>
+          </div>
+        )}
 
-      <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {/* Holding Zone */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Holding Zone</h2>
-          <div className="grid grid-cols-5 gap-4">
-            {lanes.map((lane, laneIndex) => (
-              <Droppable key={`holding-${laneIndex + 1}`} droppableId={`holding-${laneIndex + 1}`}>
+        <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          {/* Holding Zone */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-2">Holding Zone</h2>
+            <div className="w-full">
+              <Droppable key="holding-lane" droppableId="holding-1" direction="horizontal">
                 {(provided) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="min-h-[100px] bg-slate-50 rounded-lg p-2 flex items-center justify-center"
+                    className="min-h-[100px] bg-slate-50 rounded-lg p-2 flex flex-row items-center overflow-x-auto"
                   >
                     {cards.map((card, index) => {
-                      if (card.zone === "holding" && card.lane === (laneIndex + 1).toString()) {
+                      if (card.zone === "holding") {
                         return (
                           <Draggable key={card.id} draggableId={card.id} index={index}>
                             {(provided, snapshot) => (
@@ -259,13 +415,28 @@ export default function Home() {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className="w-full"
+                                className="mx-2"
                                 style={{
                                   ...provided.draggableProps.style,
                                 }}
+                                onClick={() => handleCardClick(card)}
                               >
-                                <Card className="p-3 bg-white shadow-md">
-                                  <p className="font-medium">{card.content}</p>
+                                <Card className={cn(
+                                  "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-48 text-gray-800",
+                                  playingAudio === card.id && "ring-2 ring-blue-500"
+                                )}>
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-medium">{card.content}</p>
+                                    <Volume2 className="h-4 w-4 text-blue-500" />
+                                  </div>
+                                  <p className="text-xs text-gray-700 mt-1">
+                                    Click to play audio
+                                  </p>
+                                  {playingAudio === card.id && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                    </div>
+                                  )}
                                 </Card>
                               </div>
                             )}
@@ -278,75 +449,246 @@ export default function Home() {
                   </div>
                 )}
               </Droppable>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {/* Main Board Zones */}
-        <div className="space-y-6">
-          {zones.slice(1).map((zone, zoneIndex) => (
-            <div key={zone} className="space-y-2">
-              <h2 className="text-xl font-semibold">{zone}</h2>
-              <div
-                className={cn(
-                  "grid grid-cols-5 gap-4 transition-all duration-300",
-                  glowingZone === zone && "ring-4 ring-yellow-300 rounded-lg",
-                  invalidZone === zone && "ring-4 ring-red-500 rounded-lg",
-                )}
-              >
+          {/* Zone 1 */}
+          {zoneVisibility["Zone 1"] && (
+            <>
+              <h2 className="text-xl font-semibold mb-4">Higher</h2>
+              <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <Droppable key={`${zone}-${laneIndex + 1}`} droppableId={`${zone}-${laneIndex + 1}`}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className="min-h-[100px] bg-slate-100 rounded-lg p-2 relative"
-                      >
-                        <div className="absolute top-1 left-1 text-xs text-slate-500">{lane}</div>
-                        {cards.map((card, index) => {
-                          if (card.zone === zone && card.lane === lane) {
-                            return (
-                              <Draggable key={card.id} draggableId={card.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className="mt-4"
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                    }}
-                                  >
-                                    <Card
-                                      className={cn(
-                                        "p-3 bg-white shadow-md relative",
-                                        processingCard.id === card.id && "opacity-70",
-                                      )}
+                  <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
+                    <div className="text-sm font-medium text-slate-300 mb-2">
+                      {lane}
+                    </div>
+                    <Droppable 
+                      key={`Zone 1-${laneIndex + 1}`} 
+                      droppableId={`Zone 1-${laneIndex + 1}`} 
+                      direction="horizontal"
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={cn(
+                            "min-h-[100px] bg-amber-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
+                            glowingZone === "Zone 1" && "ring-4 ring-yellow-300",
+                            invalidZone === "Zone 1" && "ring-4 ring-red-500"
+                          )}
+                        >
+                          {cards.map((card, index) => {
+                            if (card.zone === "Zone 1" && card.lane === lane) {
+                              return (
+                                <Draggable key={card.id} draggableId={card.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className="mx-2"
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                      }}
+                                      onClick={() => handleCardClick(card)}
                                     >
-                                      <p className="font-medium">{card.content}</p>
-                                      {processingCard.id === card.id && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                                          <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                                        </div>
-                                      )}
-                                    </Card>
-                                  </div>
-                                )}
-                              </Draggable>
-                            )
-                          }
-                          return null
-                        })}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
+                                      <Card
+                                        className={cn(
+                                          "p-3 bg-amber-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          processingCard.id === card.id && "opacity-70",
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                        )}
+                                      >
+                                        <p className="font-medium">{card.content}</p>
+                                        {processingCard.id === card.id && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                          </div>
+                                        )}
+                                      </Card>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              )
+                            }
+                            return null
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </DragDropContext>
+            </>
+          )}
+
+          {/* Zone Separator */}
+          {zoneVisibility["Zone 2"] && <ZoneSeparator />}
+
+          {/* Zone 2 */}
+          {zoneVisibility["Zone 2"] && (
+            <>
+              <h2 className="text-xl font-semibold mb-4">Medium</h2>
+              <div className="flex flex-row justify-between space-x-4 w-full">
+                {lanes.map((lane, laneIndex) => (
+                  <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
+                    <div className="text-sm font-medium text-slate-300 mb-2">
+                      {lane}
+                    </div>
+                    <Droppable 
+                      key={`Zone 2-${laneIndex + 1}`} 
+                      droppableId={`Zone 2-${laneIndex + 1}`} 
+                      direction="horizontal"
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={cn(
+                            "min-h-[100px] bg-green-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
+                            glowingZone === "Zone 2" && "ring-4 ring-yellow-300",
+                            invalidZone === "Zone 2" && "ring-4 ring-red-500"
+                          )}
+                        >
+                          {cards.map((card, index) => {
+                            if (card.zone === "Zone 2" && card.lane === lane) {
+                              return (
+                                <Draggable key={card.id} draggableId={card.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className="mx-2"
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                      }}
+                                      onClick={() => handleCardClick(card)}
+                                    >
+                                      <Card
+                                        className={cn(
+                                          "p-3 bg-green-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          processingCard.id === card.id && "opacity-70",
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                        )}
+                                      >
+                                        <p className="font-medium">{card.content}</p>
+                                        {processingCard.id === card.id && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                          </div>
+                                        )}
+                                      </Card>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              )
+                            }
+                            return null
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Zone Separator */}
+          {zoneVisibility["Zone 3"] && <ZoneSeparator />}
+
+          {/* Zone 3 */}
+          {zoneVisibility["Zone 3"] && (
+            <>
+              <h2 className="text-xl font-semibold mb-4">Lower</h2>
+              <div className="flex flex-row justify-between space-x-4 w-full">
+                {lanes.map((lane, laneIndex) => (
+                  <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
+                    <div className="text-sm font-medium text-slate-300 mb-2">
+                      {lane}
+                    </div>
+                    <Droppable 
+                      key={`Zone 3-${laneIndex + 1}`} 
+                      droppableId={`Zone 3-${laneIndex + 1}`} 
+                      direction="horizontal"
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={cn(
+                            "min-h-[100px] bg-blue-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
+                            glowingZone === "Zone 3" && "ring-4 ring-yellow-300",
+                            invalidZone === "Zone 3" && "ring-4 ring-red-500"
+                          )}
+                        >
+                          {cards.map((card, index) => {
+                            if (card.zone === "Zone 3" && card.lane === lane) {
+                              return (
+                                <Draggable key={card.id} draggableId={card.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className="mx-2"
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                      }}
+                                      onClick={() => handleCardClick(card)}
+                                    >
+                                      <Card
+                                        className={cn(
+                                          "p-3 bg-blue-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          processingCard.id === card.id && "opacity-70",
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                        )}
+                                      >
+                                        <p className="font-medium">{card.content}</p>
+                                        {processingCard.id === card.id && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                          </div>
+                                        )}
+                                      </Card>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              )
+                            }
+                            return null
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          
+          {/* Additional padding at the bottom for scrolling */}
+          <div className="h-24"></div>
+        </DragDropContext>
+      </div>
+
+      {/* Fixed right sidebar for master details section */}
+      <div className="w-1/3 bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner">
+        <MasterDetailsSection 
+          zoneMetadata={zoneMetadata}
+          zoneCompletions={zoneCompletions}
+          selectedVoiceCard={selectedVoiceCard}
+          totalVoices={3}
+          processingCard={processingCard}
+        />
+      </div>
+      
+      {/* Debug Panel */}
+      <DebugPanel />
     </div>
   )
 }

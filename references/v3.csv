@@ -1,0 +1,16 @@
+1,New Layout requirements for V3 of the interface
+1.1,"Instead of having a details section underneath each lane, we should have a ""master details section"" in a right-hand pane ."
+1.2,"The right-hand pane should have a fixed position, it should not scroll when the user scrolls up or down"
+1.2.1,"Only the main pane should scroll up or down, when the changes the scrollbar"
+1.3,"When the user processes a ""voice card"", the master details section should update to show the latest metrics for that voice"
+1.4,"The master details section should contain three columns, with a column for each of the 3 voices statistics."
+1.4.1,The spectrogram for each voice should display underneath the statistics
+1.5,"Remove the horizontal progress bars for each zone. Instead, tthere should be a central circular progress indicator, that acts bit like a pie chart "
+1.5.0.1,The central progress indicator should be in the fixed right-hand pane above the master details section.
+1.5.1,"It should have 4 ""principal"" quarters like slices of a cake that bisect the middle, each quarter should correspond to a zones progress"
+1.5.2,"Each quarter should be sliced into three ""sub-quarters"", each quarter represents the progress of all voices through the zone."
+1.5.3,"For example, if one voice has entered the zone, one sub-quarter should be colored in, and if two voices have entered, 2 sub-quarters, and when 3 voices have entered the entire ""primary quarter should be colored in."
+15.4,"The quarter should remain colored in when the voice cards leave zone 1 for 2, to indicated that processing in zone 1 is complete"
+1.5.6,"Likewise, when users begin to move voice cards into zone 2, the subquarters should be progressively colored in the same manner, and so on for zone 3 and 4."
+1.6,"Where the horizontal progress bar used to be, there should be a color bar that acts as a ""wall"" between each zone, the first ""wall"" should separate zone 1 and 2. "
+1.6.1,"Later I will add some conditions for when a voic card cannot be dragged past the wall, so keep this in mind, but for the time being call cards can be dragged past the wall. "

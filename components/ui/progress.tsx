@@ -25,4 +25,24 @@ const Progress = React.forwardRef<
 ))
 Progress.displayName = ProgressPrimitive.Root.displayName
 
+// Create a ZoneProgress component to track completed items in a zone
+export const ZoneProgress = ({ 
+  completed, 
+  total, 
+  className 
+}: { 
+  completed: number; 
+  total: number;
+  className?: string;
+}) => {
+  const value = total > 0 ? (completed / total) * 100 : 0;
+  
+  return (
+    <Progress
+      value={value}
+      className={cn("h-2 w-full mb-4", className)}
+    />
+  );
+};
+
 export { Progress }

@@ -7,14 +7,14 @@ cd "$(dirname "$0")"
 # Check if virtual environment exists, create if it doesn't
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    python -m venv venv
+    python3 -m venv venv
     
     # Activate virtual environment
     source venv/bin/activate
     
     # Install dependencies
     echo "Installing dependencies..."
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
 else
     # Activate virtual environment
     source venv/bin/activate

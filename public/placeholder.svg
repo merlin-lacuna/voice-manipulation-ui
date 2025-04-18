@@ -1,1 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" fill="none"><rect width="1200" height="1200" fill="#EAEAEA" rx="3"/><g opacity=".5"><g opacity=".5"><path fill="#FAFAFA" d="M600.709 736.5c-75.454 0-136.621-61.167-136.621-136.62 0-75.454 61.167-136.621 136.621-136.621 75.453 0 136.62 61.167 136.62 136.621 0 75.453-61.167 136.62-136.62 136.62Z"/><path stroke="#C9C9C9" stroke-width="2.418" d="M600.709 736.5c-75.454 0-136.621-61.167-136.621-136.62 0-75.454 61.167-136.621 136.621-136.621 75.453 0 136.62 61.167 136.62 136.621 0 75.453-61.167 136.62-136.62 136.62Z"/></g><path stroke="url(#a)" stroke-width="2.418" d="M0-1.209h553.581" transform="scale(1 -1) rotate(45 1163.11 91.165)"/><path stroke="url(#b)" stroke-width="2.418" d="M404.846 598.671h391.726"/><path stroke="url(#c)" stroke-width="2.418" d="M599.5 795.742V404.017"/><path stroke="url(#d)" stroke-width="2.418" d="m795.717 796.597-391.441-391.44"/><path fill="#fff" d="M600.709 656.704c-31.384 0-56.825-25.441-56.825-56.824 0-31.384 25.441-56.825 56.825-56.825 31.383 0 56.824 25.441 56.824 56.825 0 31.383-25.441 56.824-56.824 56.824Z"/><g clip-path="url(#e)"><path fill="#666" fill-rule="evenodd" d="M616.426 586.58h-31.434v16.176l3.553-3.554.531-.531h9.068l.074-.074 8.463-8.463h2.565l7.18 7.181V586.58Zm-15.715 14.654 3.698 3.699 1.283 1.282-2.565 2.565-1.282-1.283-5.2-5.199h-6.066l-5.514 5.514-.073.073v2.876a2.418 2.418 0 0 0 2.418 2.418h26.598a2.418 2.418 0 0 0 2.418-2.418v-8.317l-8.463-8.463-7.181 7.181-.071.072Zm-19.347 5.442v4.085a6.045 6.045 0 0 0 6.046 6.045h26.598a6.044 6.044 0 0 0 6.045-6.045v-7.108l1.356-1.355-1.282-1.283-.074-.073v-17.989h-38.689v23.43l-.146.146.146.147Z" clip-rule="evenodd"/></g><path stroke="#C9C9C9" stroke-width="2.418" d="M600.709 656.704c-31.384 0-56.825-25.441-56.825-56.824 0-31.384 25.441-56.825 56.825-56.825 31.383 0 56.824 25.441 56.824 56.825 0 31.383-25.441 56.824-56.824 56.824Z"/></g><defs><linearGradient id="a" x1="554.061" x2="-.48" y1=".083" y2=".087" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="b" x1="796.912" x2="404.507" y1="599.963" y2="599.965" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="c" x1="600.792" x2="600.794" y1="403.677" y2="796.082" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="d" x1="404.85" x2="796.972" y1="403.903" y2="796.02" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><clipPath id="e"><path fill="#fff" d="M581.364 580.535h38.689v38.689h-38.689z"/></clipPath></defs></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+  <rect width="400" height="200" fill="#F5F5F5" rx="5"/>
+  <text x="10" y="20" font-family="Arial" font-size="12" fill="#333">Spectrogram</text>
+  
+  <!-- Frequency axis labels -->
+  <text x="5" y="40" font-family="Arial" font-size="8" fill="#666">8kHz</text>
+  <text x="5" y="80" font-family="Arial" font-size="8" fill="#666">4kHz</text>
+  <text x="5" y="120" font-family="Arial" font-size="8" fill="#666">2kHz</text>
+  <text x="5" y="160" font-family="Arial" font-size="8" fill="#666">1kHz</text>
+  <text x="5" y="190" font-family="Arial" font-size="8" fill="#666">0Hz</text>
+  
+  <!-- Time axis labels -->
+  <text x="30" y="198" font-family="Arial" font-size="8" fill="#666">0s</text>
+  <text x="130" y="198" font-family="Arial" font-size="8" fill="#666">1s</text>
+  <text x="230" y="198" font-family="Arial" font-size="8" fill="#666">2s</text>
+  <text x="330" y="198" font-family="Arial" font-size="8" fill="#666">3s</text>
+  
+  <!-- Axes -->
+  <line x1="25" y1="30" x2="25" y2="190" stroke="#999" stroke-width="1"/>
+  <line x1="25" y1="190" x2="380" y2="190" stroke="#999" stroke-width="1"/>
+  
+  <!-- Generated spectrogram patterns -->
+  <g>
+    <!-- Low frequencies -->
+    <rect x="30" y="160" width="340" height="25" fill="#6495ED" opacity="0.7"/>
+    
+    <!-- Mid frequencies with varying intensity -->
+    <rect x="30" y="120" width="50" height="30" fill="#4682B4" opacity="0.6"/>
+    <rect x="90" y="120" width="60" height="30" fill="#4682B4" opacity="0.8"/>
+    <rect x="160" y="120" width="40" height="30" fill="#4682B4" opacity="0.5"/>
+    <rect x="210" y="120" width="70" height="30" fill="#4682B4" opacity="0.7"/>
+    <rect x="290" y="120" width="50" height="30" fill="#4682B4" opacity="0.6"/>
+    
+    <!-- High frequencies with varying intensity -->
+    <rect x="40" y="60" width="30" height="25" fill="#1E90FF" opacity="0.3"/>
+    <rect x="80" y="60" width="20" height="25" fill="#1E90FF" opacity="0.4"/>
+    <rect x="120" y="60" width="40" height="25" fill="#1E90FF" opacity="0.5"/>
+    <rect x="170" y="60" width="25" height="25" fill="#1E90FF" opacity="0.3"/>
+    <rect x="210" y="60" width="35" height="25" fill="#1E90FF" opacity="0.5"/>
+    <rect x="255" y="60" width="20" height="25" fill="#1E90FF" opacity="0.3"/>
+    <rect x="290" y="60" width="45" height="25" fill="#1E90FF" opacity="0.4"/>
+    
+    <!-- Very high frequencies -->
+    <rect x="50" y="40" width="15" height="10" fill="#87CEFA" opacity="0.2"/>
+    <rect x="90" y="40" width="10" height="10" fill="#87CEFA" opacity="0.3"/>
+    <rect x="120" y="40" width="25" height="10" fill="#87CEFA" opacity="0.2"/>
+    <rect x="180" y="40" width="15" height="10" fill="#87CEFA" opacity="0.3"/>
+    <rect x="220" y="40" width="20" height="10" fill="#87CEFA" opacity="0.2"/>
+    <rect x="270" y="40" width="10" height="10" fill="#87CEFA" opacity="0.3"/>
+    <rect x="300" y="40" width="30" height="10" fill="#87CEFA" opacity="0.2"/>
+    
+    <!-- Formant patterns -->
+    <rect x="30" y="90" width="340" height="20" fill="#4169E1" opacity="0.5"/>
+    <rect x="50" y="100" width="40" height="15" fill="#4169E1" opacity="0.7"/>
+    <rect x="110" y="100" width="35" height="15" fill="#4169E1" opacity="0.8"/>
+    <rect x="170" y="100" width="40" height="15" fill="#4169E1" opacity="0.7"/>
+    <rect x="230" y="100" width="30" height="15" fill="#4169E1" opacity="0.8"/>
+    <rect x="280" y="100" width="45" height="15" fill="#4169E1" opacity="0.7"/>
+  </g>
+</svg>

@@ -10,7 +10,9 @@ services:
     depends_on:
       - api
     environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./public:/app/public
 
   api:
     build:
@@ -20,6 +22,16 @@ services:
       - "8000:8000"
     volumes:
       - ./api:/app
+      - ./voices:/app/../voices:ro  # Mount voices at the correct relative path
+      - ./public:/app/public
     environment:
       - API_PORT=8000
       - API_HOST=0.0.0.0
+      - DEBUG=True
+    # Add healthcheck to see if API is running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
