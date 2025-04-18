@@ -16,6 +16,7 @@ type CardType = {
   content: string
   zone: string | null
   lane: string | null
+  asFarAsCanGo?: boolean // Track if card has reached its furthest possible position
 }
 
 type ProcessingCardType = {
@@ -43,9 +44,9 @@ type ZoneMetadataType = {
 export default function Home() {
   // Initial cards in the holding zone (reduced to 3 voices)
   const initialCards: CardType[] = [
-    { id: "voice-1", content: "Voice 1", zone: "holding", lane: "Lane 1" },
-    { id: "voice-2", content: "Voice 2", zone: "holding", lane: "Lane 1" },
-    { id: "voice-3", content: "Voice 3", zone: "holding", lane: "Lane 1" },
+    { id: "voice-1", content: "Voice 1", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
+    { id: "voice-2", content: "Voice 2", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
+    { id: "voice-3", content: "Voice 3", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
   ]
 
   const [cards, setCards] = useState<CardType[]>(initialCards)
@@ -123,6 +124,17 @@ export default function Home() {
     }
   }, [ghostCard])
   
+  // Helper function to check if all cards are as far as they can go
+  const areAllCardsAsFarAsTheyCanGo = () => {
+    return cards.every(card => card.asFarAsCanGo === true);
+  };
+  
+  // Helper function to check if a new zone should be revealed
+  const shouldRevealNextZone = (currentZone: string) => {
+    // Only reveal next zone if all cards have reached as far as they can go
+    return areAllCardsAsFarAsTheyCanGo();
+  };
+  
   // Function to check for zone completion and update visibility
   useEffect(() => {
     // Check for zone completion and update zone visibility
@@ -148,16 +160,48 @@ export default function Home() {
         "Zone 4": zone4Cards
       });
       
-      // Update zone visibility based on completion
-      if (zone1Cards === 3 && !zoneVisibility["Zone 2"]) {
+      // Update zone visibility based on whether all cards have reached their furthest possible position
+      if (zone1Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 2"]) {
         setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
+        
+        // Reset asFarAsCanGo for cards that aren't in sticky lanes
+        setCards(prevCards => prevCards.map(card => {
+          // Skip cards in sticky lanes
+          if (card.zone && card.lane) {
+            const laneNumber = getLaneNumber(card.lane);
+            if (isLaneSticky(card.zone, laneNumber)) {
+              return card; // Keep sticky lane cards as asFarAsCanGo=true
+            }
+          }
+          // Reset for non-sticky cards if they're not in the last zone
+          if (card.zone !== "Zone 3" && card.zone !== "Zone 4") {
+            return { ...card, asFarAsCanGo: false };
+          }
+          return card;
+        }));
       }
       
-      if (zone2Cards === 3 && !zoneVisibility["Zone 3"]) {
+      if (zone2Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 3"]) {
         setZoneVisibility(prev => ({ ...prev, "Zone 3": true }));
+        
+        // Reset asFarAsCanGo for cards that aren't in sticky lanes
+        setCards(prevCards => prevCards.map(card => {
+          // Skip cards in sticky lanes
+          if (card.zone && card.lane) {
+            const laneNumber = getLaneNumber(card.lane);
+            if (isLaneSticky(card.zone, laneNumber)) {
+              return card; // Keep sticky lane cards as asFarAsCanGo=true
+            }
+          }
+          // Reset for non-sticky cards if they're not in the last zone
+          if (card.zone !== "Zone 4") {
+            return { ...card, asFarAsCanGo: false };
+          }
+          return card;
+        }));
       }
       
-      if (zone3Cards === 3 && !zoneVisibility["Zone 4"]) {
+      if (zone3Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 4"]) {
         setZoneVisibility(prev => ({ ...prev, "Zone 4": true }));
       }
     };
@@ -209,6 +253,11 @@ export default function Home() {
       return false
     }
 
+    // Same zone moves are always allowed
+    if (sourceZone === destinationZone) {
+      return true
+    }
+    
     // Can only move to adjacent zones (next or previous)
     return Math.abs(sourceIndex - destIndex) === 1
   }
@@ -393,21 +442,29 @@ export default function Home() {
       const destLaneId = destination.droppableId.split("-")[1]
       const destLaneName = `Lane ${destLaneId}`
       
-      // Check if there's already a card in this lane
-      const isLaneOccupied = cards.some(card => 
-        card.id !== draggableId && // Not the card being dragged
-        card.zone === destZoneId && 
-        card.lane === destLaneName
-      )
-      
-      if (isLaneOccupied) {
-        // Show red glow on the destination zone
-        setInvalidZone(destZoneId)
-        setTimeout(() => setInvalidZone(null), 1000)
+      // If we're moving from one lane to another, check if the destination is occupied
+      if (source.droppableId !== destination.droppableId) {
+        // Check if there's already a card in this lane (that isn't the card being dragged)
+        const isLaneOccupied = cards.some(card => 
+          card.id !== draggableId && // Not the card being dragged
+          card.zone === destZoneId && 
+          card.lane === destLaneName
+        )
         
-        // Make the card fly back to its original position
-        flyCardBack()
-        return
+        if (isLaneOccupied) {
+          // Show red glow on the destination zone
+          setInvalidZone(destZoneId)
+          setTimeout(() => setInvalidZone(null), 1000)
+          
+          // Make the card fly back to its original position
+          flyCardBack()
+          
+          // Show informative message
+          setApiMessage("This lane already contains a card")
+          setTimeout(() => setApiMessage(""), 2000)
+          
+          return
+        }
       }
     }
 
@@ -426,10 +483,10 @@ export default function Home() {
     // Update card position
     const updatedCards = cards.map((card) => {
       if (card.id === draggableId) {
-        // If moving to holding zone, clear the API message
+        // If moving to holding zone, clear the API message and reset asFarAsCanGo
         if (destZoneId === "holding") {
           setApiMessage("")
-          return { ...card, zone: "holding", lane: card.lane }
+          return { ...card, zone: "holding", lane: card.lane, asFarAsCanGo: false }
         }
 
         // Set processing state
@@ -474,7 +531,26 @@ export default function Home() {
           setProcessingCard({ id: null, zone: null, lane: null })
         })
 
-        return { ...card, zone: destZoneId, lane: destLaneName }
+        // Set asFarAsCanGo to true if card is placed in a sticky lane
+        const laneNumber = getLaneNumber(destLaneName);
+        const isSticky = isLaneSticky(destZoneId, laneNumber);
+        
+        // Calculate if this card is as far as it can go
+        // True if: 1) It's in a sticky lane, 2) It's in Zone 4, 3) It's moving to a higher zone than before
+        // Get zone numbers
+        const sourceZoneNum = getZoneNumber(sourceZoneId);
+        const destZoneNum = getZoneNumber(destZoneId);
+        
+        // Card is "as far as it can go" if:
+        const isMovingToHigherZone = destZoneNum > sourceZoneNum; // Moving to a higher zone number
+        const newAsFarAsCanGo = isSticky || destZoneId === "Zone 4" || isMovingToHigherZone;
+        
+        return { 
+          ...card, 
+          zone: destZoneId, 
+          lane: destLaneName,
+          asFarAsCanGo: newAsFarAsCanGo
+        }
       }
       return card
     })
@@ -663,7 +739,8 @@ export default function Home() {
                                         className={cn(
                                           "p-3 bg-amber-300 shadow-md relative w-48 cursor-pointer text-gray-800",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
                                         <p className="font-medium">{card.content}</p>
@@ -761,7 +838,8 @@ export default function Home() {
                                         className={cn(
                                           "p-3 bg-green-300 shadow-md relative w-48 cursor-pointer text-gray-800",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
                                         <p className="font-medium">{card.content}</p>
@@ -859,7 +937,8 @@ export default function Home() {
                                         className={cn(
                                           "p-3 bg-blue-300 shadow-md relative w-48 cursor-pointer text-gray-800",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500"
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
                                         <p className="font-medium">{card.content}</p>
@@ -903,7 +982,10 @@ export default function Home() {
       </div>
       
       {/* Debug Panel */}
-      <DebugPanel />
+      <DebugPanel 
+        cards={cards}
+        areAllCardsAsFarAsTheyCanGo={areAllCardsAsFarAsTheyCanGo()}
+      />
     </div>
   )
 }

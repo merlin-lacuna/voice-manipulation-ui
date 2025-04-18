@@ -5,7 +5,12 @@ import { Card } from "@/components/ui/card"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export function DebugPanel() {
+interface DebugPanelProps {
+  cards?: any[];
+  areAllCardsAsFarAsTheyCanGo?: boolean;
+}
+
+export function DebugPanel({ cards = [], areAllCardsAsFarAsTheyCanGo = false }: DebugPanelProps) {
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -123,6 +128,28 @@ export function DebugPanel() {
               </div>
             </div>
           )}
+          
+          {/* Show card states */}
+          <div className="text-xs space-y-2 mb-4 border p-2 bg-green-50 rounded">
+            <h4 className="font-medium">Card States:</h4>
+            <p className="font-medium text-purple-600">
+              All cards as far as they can go: {areAllCardsAsFarAsTheyCanGo ? '✅ Yes' : '❌ No'}
+            </p>
+            <div className="pl-2">
+              {cards.map((card: any, index: number) => (
+                <div key={index} className="mb-1 border-b border-gray-200 pb-1">
+                  <p className="font-medium">{card.content}:</p>
+                  <div className="pl-2">
+                    <p>Zone: {card.zone || 'None'}</p>
+                    <p>Lane: {card.lane || 'None'}</p>
+                    <p className={card.asFarAsCanGo ? 'text-purple-600 font-medium' : ''}>
+                      As Far As Can Go: {card.asFarAsCanGo ? '✅ Yes' : '❌ No'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           
           {debugInfo ? (
             <div className="text-xs space-y-2">
