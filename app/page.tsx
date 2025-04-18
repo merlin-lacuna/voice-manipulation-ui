@@ -965,6 +965,105 @@ export default function Home() {
             </>
           )}
           
+          {/* Wall between Zone 3 and Zone 4 */}
+          {zoneVisibility["Zone 4"] && <ZoneSeparator color="blue" />}
+
+          {/* Zone 4 */}
+          {zoneVisibility["Zone 4"] && (
+            <>
+              <h2 className="text-xl font-semibold mb-4">Zone 4</h2>
+              <div className="flex flex-row justify-between space-x-4 w-full">
+                {lanes.map((lane, laneIndex) => (
+                  <div key={`Zone 4-lane-${laneIndex + 1}`} className="flex-1">
+                    <div className="flex items-center mb-2">
+                      <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
+                        ${isLaneSticky("Zone 4", laneIndex + 1) ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 4", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
+                        {lane}
+                        {isLaneSticky("Zone 4", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                        {isLaneBlocking("Zone 4", laneIndex + 1) && !isLaneSticky("Zone 4", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
+                        )}
+                      </div>
+                    </div>
+                    <Droppable 
+                      key={`Zone 4-${laneIndex + 1}`} 
+                      droppableId={`Zone 4-${laneIndex + 1}`} 
+                      direction="horizontal"
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          style={{ 
+                            backgroundColor: laneIndex === 0 ? '#f9a8d4' : laneIndex === 1 ? '#ec4899' : '#be185d',
+                            minHeight: '100px',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            width: '100%',
+                            overflowX: 'auto',
+                            boxShadow: glowingZone === "Zone 4" ? '0 0 0 4px #fcd34d' : 
+                                       invalidZone === "Zone 4" ? '0 0 0 4px #ef4444' : 
+                                       isLaneSticky("Zone 4", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 4", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 4", laneIndex + 1) ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 4", laneIndex + 1) ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 4", laneIndex + 1) ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 4", laneIndex + 1) ? '3px dotted #f97316' : 'none'
+                          }}
+                        >
+                          {cards.map((card, index) => {
+                            if (card.zone === "Zone 4" && card.lane === lane) {
+                              return (
+                                <Draggable key={card.id} draggableId={card.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className="mx-2"
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                      }}
+                                      onClick={() => handleCardClick(card)}
+                                    >
+                                      <Card
+                                        className={cn(
+                                          "p-3 bg-pink-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          processingCard.id === card.id && "opacity-70",
+                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          card.asFarAsCanGo && "border-b-4 border-purple-600"
+                                        )}
+                                      >
+                                        <p className="font-medium">{card.content}</p>
+                                        {processingCard.id === card.id && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                          </div>
+                                        )}
+                                      </Card>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              )
+                            }
+                            return null
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Additional padding at the bottom for scrolling */}
           <div className="h-24"></div>
         </DragDropContext>
