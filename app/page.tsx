@@ -300,17 +300,9 @@ export default function Home() {
 
     // Get original position
     const originalPosition = cardPositionsRef.current.get(draggableId)
-
-    // Dropped outside a droppable area or invalid move
-    if (!destination || !isValidMove(source.droppableId.split("-")[0], destination.droppableId.split("-")[0])) {
-      // Show red glow if dropped in invalid zone
-      if (destination) {
-        const destZoneId = destination.droppableId.split("-")[0]
-        setInvalidZone(destZoneId)
-        setTimeout(() => setInvalidZone(null), 1000)
-      }
-
-      // Create ghost card for animation
+    
+    // Function to animate card flying back
+    const flyCardBack = () => {
       if (originalPosition) {
         setGhostCard({
           id: draggableId,
@@ -322,8 +314,44 @@ export default function Home() {
           isAnimating: true,
         })
       }
+    }
 
+    // Dropped outside a droppable area or invalid move
+    if (!destination || !isValidMove(source.droppableId.split("-")[0], destination.droppableId.split("-")[0])) {
+      // Show red glow if dropped in invalid zone
+      if (destination) {
+        const destZoneId = destination.droppableId.split("-")[0]
+        setInvalidZone(destZoneId)
+        setTimeout(() => setInvalidZone(null), 1000)
+      }
+
+      // Create ghost card for animation
+      flyCardBack()
       return
+    }
+    
+    // Check if the destination lane already has a card (unless it's the holding zone)
+    if (destination.droppableId !== "holding-1") {
+      const destZoneId = destination.droppableId.split("-")[0]
+      const destLaneId = destination.droppableId.split("-")[1]
+      const destLaneName = `Lane ${destLaneId}`
+      
+      // Check if there's already a card in this lane
+      const isLaneOccupied = cards.some(card => 
+        card.id !== draggableId && // Not the card being dragged
+        card.zone === destZoneId && 
+        card.lane === destLaneName
+      )
+      
+      if (isLaneOccupied) {
+        // Show red glow on the destination zone
+        setInvalidZone(destZoneId)
+        setTimeout(() => setInvalidZone(null), 1000)
+        
+        // Make the card fly back to its original position
+        flyCardBack()
+        return
+      }
     }
 
     const sourceZoneId = source.droppableId.split("-")[0]
@@ -440,7 +468,7 @@ export default function Home() {
 
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Holding Zone */}
-          <div className="mb-8">
+          <div className="mb-4">
             <h2 className="text-xl font-semibold mb-2">Holding Zone</h2>
             <div className="w-full">
               <Droppable key="holding-lane" droppableId="holding-1" direction="horizontal">
@@ -505,6 +533,9 @@ export default function Home() {
               </Droppable>
             </div>
           </div>
+          
+          {/* Wall between Holding Zone and Zone 1 */}
+          <ZoneSeparator color="purple" />
 
           {/* Zone 1 */}
           {zoneVisibility["Zone 1"] && (
@@ -584,8 +615,8 @@ export default function Home() {
             </>
           )}
 
-          {/* Zone Separator */}
-          {zoneVisibility["Zone 2"] && <ZoneSeparator />}
+          {/* Wall between Zone 1 and Zone 2 */}
+          {zoneVisibility["Zone 2"] && <ZoneSeparator color="amber" />}
 
           {/* Zone 2 */}
           {zoneVisibility["Zone 2"] && (
@@ -665,8 +696,8 @@ export default function Home() {
             </>
           )}
 
-          {/* Zone Separator */}
-          {zoneVisibility["Zone 3"] && <ZoneSeparator />}
+          {/* Wall between Zone 2 and Zone 3 */}
+          {zoneVisibility["Zone 3"] && <ZoneSeparator color="green" />}
 
           {/* Zone 3 */}
           {zoneVisibility["Zone 3"] && (
