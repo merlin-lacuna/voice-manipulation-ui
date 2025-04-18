@@ -64,12 +64,12 @@ export default function Home() {
     "Zone 4": 0
   })
   
-  // State for zone visibility - now all zones are visible by default
+  // State for zone visibility - only Zone 1 visible initially
   const [zoneVisibility, setZoneVisibility] = useState<{ [key: string]: boolean }>({
     "Zone 1": true,
-    "Zone 2": true,
-    "Zone 3": true,
-    "Zone 4": true
+    "Zone 2": false,
+    "Zone 3": false,
+    "Zone 4": false
   })
   
   // State for storing metadata for each zone/lane combination
@@ -123,9 +123,9 @@ export default function Home() {
     }
   }, [ghostCard])
   
-  // Function to check zone completion for progress tracker
+  // Function to check for zone completion and update visibility
   useEffect(() => {
-    // Check for zone completion to update the progress tracker
+    // Check for zone completion and update zone visibility
     const checkZoneCompletion = () => {
       // Count unique voices in each zone
       const uniqueVoicesInZone = (zoneName: string) => {
@@ -148,21 +148,41 @@ export default function Home() {
         "Zone 4": zone4Cards
       });
       
-      // All zones are now visible by default, so we don't need to update visibility
+      // Update zone visibility based on completion
+      if (zone1Cards === 3 && !zoneVisibility["Zone 2"]) {
+        setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
+      }
+      
+      if (zone2Cards === 3 && !zoneVisibility["Zone 3"]) {
+        setZoneVisibility(prev => ({ ...prev, "Zone 3": true }));
+      }
+      
+      if (zone3Cards === 3 && !zoneVisibility["Zone 4"]) {
+        setZoneVisibility(prev => ({ ...prev, "Zone 4": true }));
+      }
     };
     
     checkZoneCompletion();
-  }, [cards]);
+  }, [cards, zoneVisibility]);
 
   const isValidMove = (sourceZone: string, destinationZone: string) => {
     // Allow moving from any zone back to the holding zone
     if (destinationZone === "holding") return true
 
-    // Allow moving from holding zone to any zone
-    if (sourceZone === "holding") return true
+    // Allow moving from holding zone to Zone 1
+    if (sourceZone === "holding" && destinationZone === "Zone 1") return true
     
-    // Allow moving between zones freely
-    return true
+    // Allow moving to adjacent zones, but only if they're visible
+    const sourceIndex = zones.indexOf(sourceZone)
+    const destIndex = zones.indexOf(destinationZone)
+    
+    // Check if the destination zone is visible
+    if (!zoneVisibility[destinationZone] && destinationZone !== "holding") {
+      return false
+    }
+
+    // Can only move to adjacent zones (next or previous)
+    return Math.abs(sourceIndex - destIndex) === 1
   }
 
   const handleDragStart = (start: any) => {
@@ -354,8 +374,8 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-indigo-800 text-white">
-      {/* Main scrollable content area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Main scrollable content area - fixed at 70% */}
+      <div className="w-[70%] overflow-y-auto p-4">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold">VOCAL BOX BIAS</h1>
           <div className="flex items-center space-x-2">
@@ -455,7 +475,7 @@ export default function Home() {
           {/* Zone 1 */}
           {zoneVisibility["Zone 1"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Higher</h2>
+              <h2 className="text-xl font-semibold mb-4">Zone 1</h2>
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
@@ -529,7 +549,7 @@ export default function Home() {
           {/* Zone 2 */}
           {zoneVisibility["Zone 2"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Medium</h2>
+              <h2 className="text-xl font-semibold mb-4">Zone 2</h2>
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
@@ -603,7 +623,7 @@ export default function Home() {
           {/* Zone 3 */}
           {zoneVisibility["Zone 3"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Lower</h2>
+              <h2 className="text-xl font-semibold mb-4">Zone 3</h2>
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
@@ -677,7 +697,7 @@ export default function Home() {
       </div>
 
       {/* Fixed right sidebar for master details section */}
-      <div className="w-1/3 bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner">
+      <div className="w-[30%] bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner">
         <MasterDetailsSection 
           zoneMetadata={zoneMetadata}
           zoneCompletions={zoneCompletions}

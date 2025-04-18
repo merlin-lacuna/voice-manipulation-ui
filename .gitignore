@@ -137,3 +137,4 @@ dist
 /api/venv
 /api/__pycache__
 /venv
+*.Identifier
