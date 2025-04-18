@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
 import { Loader2, CheckCircle, XCircle, Volume2 } from "lucide-react"
-import { cn, isLaneSticky, getLaneNumber } from "@/lib/utils"
+import { cn, isLaneSticky, isLaneBlocking, getLaneNumber, getZoneNumber } from "@/lib/utils"
 import { checkApiStatus, processVoice, playAudio, MetadataItem, ProcessResponse } from "@/lib/api-client"
 import { MasterDetailsSection } from "@/components/ui/master-details"
 import { ZoneSeparator } from "@/components/ui/zone-separator"
@@ -179,6 +179,17 @@ export default function Home() {
         // If the card is in a sticky lane, prevent any movement
         if (isLaneSticky(sourceZone, laneNumber)) {
           return false
+        }
+        
+        // Check for blocking lane: if card is in a blocking lane, it can only move within same zone
+        if (isLaneBlocking(sourceZone, laneNumber)) {
+          const sourceZoneNum = getZoneNumber(sourceZone)
+          const destZoneNum = getZoneNumber(destinationZone)
+          
+          // If trying to move to a higher zone, block the move
+          if (destZoneNum > sourceZoneNum) {
+            return false
+          }
         }
       }
     }
@@ -357,11 +368,18 @@ export default function Home() {
       // Create ghost card for animation
       flyCardBack()
       
-      // If this was a sticky lane, show a message
+      // Show message for sticky or blocking lanes
       if (sourceLaneName) {
         const laneNumber = getLaneNumber(sourceLaneName)
+        const sourceZoneNum = getZoneNumber(sourceZoneId)
+        const destZoneNum = destZoneId ? getZoneNumber(destZoneId) : 0
+        
         if (isLaneSticky(sourceZoneId, laneNumber)) {
           setApiMessage("This card is in a sticky lane and cannot be moved")
+          setTimeout(() => setApiMessage(""), 2000)
+        } 
+        else if (isLaneBlocking(sourceZoneId, laneNumber) && destZoneNum > sourceZoneNum) {
+          setApiMessage(`This card is in a blocking lane and cannot be moved to Zone ${destZoneNum}`)
           setTimeout(() => setApiMessage(""), 2000)
         }
       }
@@ -586,10 +604,14 @@ export default function Home() {
                   <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 1", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
                         {lane}
                         {isLaneSticky("Zone 1", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                        {isLaneBlocking("Zone 1", laneIndex + 1) && !isLaneSticky("Zone 1", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
                     </div>
@@ -614,9 +636,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 1", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
-                            borderTop: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
-                            borderBottom: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
+                                       isLaneSticky("Zone 1", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 1", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 1", laneIndex + 1) ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' :
+                                         isLaneBlocking("Zone 1", laneIndex + 1) ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -677,10 +702,14 @@ export default function Home() {
                   <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 2", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
                         {lane}
                         {isLaneSticky("Zone 2", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                        {isLaneBlocking("Zone 2", laneIndex + 1) && !isLaneSticky("Zone 2", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
                     </div>
@@ -705,9 +734,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 2", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
-                            borderTop: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
-                            borderBottom: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
+                                       isLaneSticky("Zone 2", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 2", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 2", laneIndex + 1) ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 2", laneIndex + 1) ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -768,10 +800,14 @@ export default function Home() {
                   <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 3", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
                         {lane}
                         {isLaneSticky("Zone 3", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                        {isLaneBlocking("Zone 3", laneIndex + 1) && !isLaneSticky("Zone 3", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
                     </div>
@@ -796,9 +832,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 3", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
-                            borderTop: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
-                            borderBottom: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
+                                       isLaneSticky("Zone 3", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 3", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 3", laneIndex + 1) ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 3", laneIndex + 1) ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
