@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
 import { Loader2, CheckCircle, XCircle, Volume2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, isLaneSticky, getLaneNumber } from "@/lib/utils"
 import { checkApiStatus, processVoice, playAudio, MetadataItem, ProcessResponse } from "@/lib/api-client"
 import { MasterDetailsSection } from "@/components/ui/master-details"
 import { ZoneSeparator } from "@/components/ui/zone-separator"
@@ -165,8 +165,25 @@ export default function Home() {
     checkZoneCompletion();
   }, [cards, zoneVisibility]);
 
-  const isValidMove = (sourceZone: string, destinationZone: string) => {
-    // Allow moving from any zone back to the holding zone
+  const isValidMove = (
+    sourceZone: string, 
+    destinationZone: string, 
+    sourceLane?: string, 
+    cardId?: string
+  ) => {
+    // Check for sticky lane: if card is in a sticky lane, it cannot be moved
+    if (cardId && sourceLane) {
+      const card = cards.find(c => c.id === cardId)
+      if (card && card.lane === sourceLane) {
+        const laneNumber = getLaneNumber(sourceLane)
+        // If the card is in a sticky lane, prevent any movement
+        if (isLaneSticky(sourceZone, laneNumber)) {
+          return false
+        }
+      }
+    }
+
+    // Allow moving from any zone back to the holding zone (unless in sticky lane)
     if (destinationZone === "holding") return true
 
     // Allow moving from holding zone to Zone 1
@@ -316,17 +333,39 @@ export default function Home() {
       }
     }
 
+    // Extract source information
+    const sourceZoneId = source.droppableId.split("-")[0]
+    const sourceLaneId = source.droppableId.split("-")[1]
+    const sourceLaneName = sourceLaneId ? `Lane ${sourceLaneId}` : null
+    
+    // Extract destination information
+    const destZoneId = destination?.droppableId.split("-")[0]
+    
     // Dropped outside a droppable area or invalid move
-    if (!destination || !isValidMove(source.droppableId.split("-")[0], destination.droppableId.split("-")[0])) {
+    if (!destination || !isValidMove(
+      sourceZoneId, 
+      destZoneId, 
+      sourceLaneName, 
+      draggableId
+    )) {
       // Show red glow if dropped in invalid zone
       if (destination) {
-        const destZoneId = destination.droppableId.split("-")[0]
-        setInvalidZone(destZoneId)
+        setInvalidZone(destination.droppableId.split("-")[0])
         setTimeout(() => setInvalidZone(null), 1000)
       }
 
       // Create ghost card for animation
       flyCardBack()
+      
+      // If this was a sticky lane, show a message
+      if (sourceLaneName) {
+        const laneNumber = getLaneNumber(sourceLaneName)
+        if (isLaneSticky(sourceZoneId, laneNumber)) {
+          setApiMessage("This card is in a sticky lane and cannot be moved")
+          setTimeout(() => setApiMessage(""), 2000)
+        }
+      }
+      
       return
     }
     
@@ -354,8 +393,9 @@ export default function Home() {
       }
     }
 
-    const sourceZoneId = source.droppableId.split("-")[0]
-    const destZoneId = destination.droppableId.split("-")[0]
+    // These variables are already defined above
+    // const sourceZoneId = source.droppableId.split("-")[0]
+    // const destZoneId = destination.droppableId.split("-")[0]
     
     // Get the lane from the droppable ID
     let destLaneName = "Lane 1";
@@ -544,8 +584,14 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
-                      {lane}
+                    <div className="flex items-center mb-2">
+                      <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
+                        ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        {lane}
+                        {isLaneSticky("Zone 1", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                      </div>
                     </div>
                     <Droppable 
                       key={`Zone 1-${laneIndex + 1}`} 
@@ -566,7 +612,11 @@ export default function Home() {
                             alignItems: 'center',
                             width: '100%',
                             overflowX: 'auto',
-                            boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 'none'
+                            boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : 
+                                       invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 
+                                       isLaneSticky("Zone 1", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
+                            borderTop: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
+                            borderBottom: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -625,8 +675,14 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
-                      {lane}
+                    <div className="flex items-center mb-2">
+                      <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
+                        ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        {lane}
+                        {isLaneSticky("Zone 2", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                      </div>
                     </div>
                     <Droppable 
                       key={`Zone 2-${laneIndex + 1}`} 
@@ -647,7 +703,11 @@ export default function Home() {
                             alignItems: 'center',
                             width: '100%',
                             overflowX: 'auto',
-                            boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 'none'
+                            boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : 
+                                       invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 
+                                       isLaneSticky("Zone 2", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
+                            borderTop: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
+                            borderBottom: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -706,8 +766,14 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
-                      {lane}
+                    <div className="flex items-center mb-2">
+                      <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
+                        ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : ''}`}>
+                        {lane}
+                        {isLaneSticky("Zone 3", laneIndex + 1) && (
+                          <span className="ml-1 text-xs text-red-300">STICKY</span>
+                        )}
+                      </div>
                     </div>
                     <Droppable 
                       key={`Zone 3-${laneIndex + 1}`} 
@@ -728,7 +794,11 @@ export default function Home() {
                             alignItems: 'center',
                             width: '100%',
                             overflowX: 'auto',
-                            boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 'none'
+                            boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : 
+                                       invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 
+                                       isLaneSticky("Zone 3", laneIndex + 1) ? '0 0 0 3px #ef4444' : 'none',
+                            borderTop: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 'none',
+                            borderBottom: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
