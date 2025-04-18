@@ -188,6 +188,18 @@ export default function Home() {
   const handleDragStart = (start: any) => {
     const { draggableId } = start
 
+    // Fix layout widths during drag
+    const mainPane = document.querySelector('.main-pane')
+    const sidePane = document.querySelector('.side-pane')
+    
+    if (mainPane) {
+      mainPane.setAttribute('style', 'min-width: 70%; max-width: 70%; width: 70%;')
+    }
+    
+    if (sidePane) {
+      sidePane.setAttribute('style', 'min-width: 30%; max-width: 30%; width: 30%;')
+    }
+
     // Store positions of all cards
     document.querySelectorAll("[data-rbd-draggable-id]").forEach((el) => {
       const id = el.getAttribute("data-rbd-draggable-id")
@@ -269,6 +281,18 @@ export default function Home() {
 
   const handleDragEnd = async (result: any) => {
     const { source, destination, draggableId } = result
+
+    // Ensure layout widths remain fixed
+    const mainPane = document.querySelector('.main-pane')
+    const sidePane = document.querySelector('.side-pane')
+    
+    if (mainPane) {
+      mainPane.setAttribute('style', 'min-width: 70%; max-width: 70%; width: 70%;')
+    }
+    
+    if (sidePane) {
+      sidePane.setAttribute('style', 'min-width: 30%; max-width: 30%; width: 30%;')
+    }
 
     // Find the card that was dragged
     const draggedCard = cards.find((card) => card.id === draggableId)
@@ -373,9 +397,9 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-indigo-800 text-white">
-      {/* Main scrollable content area - fixed at 70% */}
-      <div className="w-[70%] overflow-y-auto p-4">
+    <div className="flex h-screen overflow-hidden bg-indigo-800 text-white" style={{ minWidth: "100vw" }}>
+      {/* Main scrollable content area - fixed at 70% with minimum width */}
+      <div className="w-[70%] overflow-y-auto p-4 main-pane" style={{ minWidth: "70%", maxWidth: "70%" }}>
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold">VOCAL BOX BIAS</h1>
           <div className="flex items-center space-x-2">
@@ -424,7 +448,17 @@ export default function Home() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="min-h-[100px] bg-slate-50 rounded-lg p-2 flex flex-row items-center overflow-x-auto"
+                    style={{
+                      backgroundColor: '#e2e8f0',
+                      minHeight: '100px',
+                      borderRadius: '0.5rem',
+                      padding: '0.5rem',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      overflowX: 'auto',
+                      border: '2px dashed #64748b'
+                    }}
                   >
                     {cards.map((card, index) => {
                       if (card.zone === "holding") {
@@ -479,7 +513,7 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-slate-300 mb-2">
+                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
                       {lane}
                     </div>
                     <Droppable 
@@ -491,11 +525,18 @@ export default function Home() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={cn(
-                            "min-h-[100px] bg-amber-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
-                            glowingZone === "Zone 1" && "ring-4 ring-yellow-300",
-                            invalidZone === "Zone 1" && "ring-4 ring-red-500"
-                          )}
+                          style={{ 
+                            backgroundColor: laneIndex === 0 ? '#fef3c7' : laneIndex === 1 ? '#fcd34d' : '#f59e0b',
+                            minHeight: '100px',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            width: '100%',
+                            overflowX: 'auto',
+                            boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 'none'
+                          }}
                         >
                           {cards.map((card, index) => {
                             if (card.zone === "Zone 1" && card.lane === lane) {
@@ -553,7 +594,7 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-slate-300 mb-2">
+                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
                       {lane}
                     </div>
                     <Droppable 
@@ -565,11 +606,18 @@ export default function Home() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={cn(
-                            "min-h-[100px] bg-green-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
-                            glowingZone === "Zone 2" && "ring-4 ring-yellow-300",
-                            invalidZone === "Zone 2" && "ring-4 ring-red-500"
-                          )}
+                          style={{ 
+                            backgroundColor: laneIndex === 0 ? '#dcfce7' : laneIndex === 1 ? '#86efac' : '#22c55e',
+                            minHeight: '100px',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            width: '100%',
+                            overflowX: 'auto',
+                            boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 'none'
+                          }}
                         >
                           {cards.map((card, index) => {
                             if (card.zone === "Zone 2" && card.lane === lane) {
@@ -627,7 +675,7 @@ export default function Home() {
               <div className="flex flex-row justify-between space-x-4 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
-                    <div className="text-sm font-medium text-slate-300 mb-2">
+                    <div className="text-sm font-medium text-white mb-2 bg-indigo-900 inline-block p-1 rounded">
                       {lane}
                     </div>
                     <Droppable 
@@ -639,11 +687,18 @@ export default function Home() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={cn(
-                            "min-h-[100px] bg-blue-100 rounded-lg p-2 flex flex-row items-center w-full overflow-x-auto",
-                            glowingZone === "Zone 3" && "ring-4 ring-yellow-300",
-                            invalidZone === "Zone 3" && "ring-4 ring-red-500"
-                          )}
+                          style={{ 
+                            backgroundColor: laneIndex === 0 ? '#dbeafe' : laneIndex === 1 ? '#93c5fd' : '#3b82f6',
+                            minHeight: '100px',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            width: '100%',
+                            overflowX: 'auto',
+                            boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 'none'
+                          }}
                         >
                           {cards.map((card, index) => {
                             if (card.zone === "Zone 3" && card.lane === lane) {
@@ -697,7 +752,7 @@ export default function Home() {
       </div>
 
       {/* Fixed right sidebar for master details section */}
-      <div className="w-[30%] bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner">
+      <div className="w-[30%] bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner side-pane" style={{ minWidth: "30%", maxWidth: "30%" }}>
         <MasterDetailsSection 
           zoneMetadata={zoneMetadata}
           zoneCompletions={zoneCompletions}
