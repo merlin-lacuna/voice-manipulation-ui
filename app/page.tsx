@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
 import { Loader2, CheckCircle, XCircle, Volume2 } from "lucide-react"
@@ -65,6 +65,16 @@ export default function Home() {
     "Zone 4": 0
   })
   
+  // Track historical presence of voice cards in each zone
+  const [historicalZonePresence, setHistoricalZonePresence] = useState<{
+    [key: string]: Set<string>
+  }>({
+    "Zone 1": new Set(),
+    "Zone 2": new Set(),
+    "Zone 3": new Set(),
+    "Zone 4": new Set()
+  })
+  
   // State for zone visibility - only Zone 1 visible initially
   const [zoneVisibility, setZoneVisibility] = useState<{ [key: string]: boolean }>({
     "Zone 1": true,
@@ -112,7 +122,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove)
     }
-  }, [])
+  }, [setMousePosition])
 
   // Handle ghost card animation end
   useEffect(() => {
@@ -125,9 +135,9 @@ export default function Home() {
   }, [ghostCard])
   
   // Helper function to check if all cards are as far as they can go
-  const areAllCardsAsFarAsTheyCanGo = () => {
+  const areAllCardsAsFarAsTheyCanGo = useCallback(() => {
     return cards.every(card => card.asFarAsCanGo === true);
-  };
+  }, [cards]);
   
   // Helper function to check if a new zone should be revealed
   const shouldRevealNextZone = (currentZone: string) => {
@@ -135,79 +145,102 @@ export default function Home() {
     return areAllCardsAsFarAsTheyCanGo();
   };
   
-  // Function to check for zone completion and update visibility
+  // Effect to update historical zone presence based on cards
   useEffect(() => {
-    // Check for zone completion and update zone visibility
-    const checkZoneCompletion = () => {
-      // Count unique voices in each zone
-      const uniqueVoicesInZone = (zoneName: string) => {
-        const voicesInZone = cards
-          .filter(card => card.zone === zoneName)
-          .map(card => card.content);
-        return new Set(voicesInZone).size;
-      };
-      
-      // Update zone completion counts
-      const zone1Cards = uniqueVoicesInZone("Zone 1");
-      const zone2Cards = uniqueVoicesInZone("Zone 2");
-      const zone3Cards = uniqueVoicesInZone("Zone 3");
-      const zone4Cards = uniqueVoicesInZone("Zone 4");
-      
-      setZoneCompletions({
-        "Zone 1": zone1Cards,
-        "Zone 2": zone2Cards,
-        "Zone 3": zone3Cards,
-        "Zone 4": zone4Cards
-      });
-      
-      // Update zone visibility based on whether all cards have reached their furthest possible position
-      if (zone1Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 2"]) {
-        setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
-        
-        // Reset asFarAsCanGo for cards that aren't in sticky lanes
-        setCards(prevCards => prevCards.map(card => {
-          // Skip cards in sticky lanes
-          if (card.zone && card.lane) {
-            const laneNumber = getLaneNumber(card.lane);
-            if (isLaneSticky(card.zone, laneNumber)) {
-              return card; // Keep sticky lane cards as asFarAsCanGo=true
-            }
-          }
-          // Reset for non-sticky cards if they're not in the last zone
-          if (card.zone !== "Zone 3" && card.zone !== "Zone 4") {
-            return { ...card, asFarAsCanGo: false };
-          }
-          return card;
-        }));
-      }
-      
-      if (zone2Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 3"]) {
-        setZoneVisibility(prev => ({ ...prev, "Zone 3": true }));
-        
-        // Reset asFarAsCanGo for cards that aren't in sticky lanes
-        setCards(prevCards => prevCards.map(card => {
-          // Skip cards in sticky lanes
-          if (card.zone && card.lane) {
-            const laneNumber = getLaneNumber(card.lane);
-            if (isLaneSticky(card.zone, laneNumber)) {
-              return card; // Keep sticky lane cards as asFarAsCanGo=true
-            }
-          }
-          // Reset for non-sticky cards if they're not in the last zone
-          if (card.zone !== "Zone 4") {
-            return { ...card, asFarAsCanGo: false };
-          }
-          return card;
-        }));
-      }
-      
-      if (zone3Cards > 0 && areAllCardsAsFarAsTheyCanGo() && !zoneVisibility["Zone 4"]) {
-        setZoneVisibility(prev => ({ ...prev, "Zone 4": true }));
-      }
-    };
+    // Create a new object to hold updated zone presence
+    const newZonePresence = { ...historicalZonePresence };
+    let hasChanges = false;
     
-    checkZoneCompletion();
-  }, [cards, zoneVisibility]);
+    // Update historical zone presence for current card positions
+    cards.forEach(card => {
+      if (card.zone && card.zone !== "holding") {
+        // Add this voice to the historical presence for this zone
+        const zoneSet = new Set(newZonePresence[card.zone].values());
+        if (!zoneSet.has(card.content)) {
+          zoneSet.add(card.content);
+          newZonePresence[card.zone] = zoneSet;
+          hasChanges = true;
+        }
+      }
+    });
+    
+    // Only update state if there were changes
+    if (hasChanges) {
+      setHistoricalZonePresence(newZonePresence);
+    }
+  }, [cards]);
+  
+  // Separate effect to update zone completions based on historical presence
+  useEffect(() => {    
+    // Get the count of voices that have historically been in each zone
+    const zone1HistoricalCount = historicalZonePresence["Zone 1"].size;
+    const zone2HistoricalCount = historicalZonePresence["Zone 2"].size;
+    const zone3HistoricalCount = historicalZonePresence["Zone 3"].size;
+    const zone4HistoricalCount = historicalZonePresence["Zone 4"].size;
+    
+    // Update zone completion counts based on historical presence
+    setZoneCompletions({
+      "Zone 1": zone1HistoricalCount,
+      "Zone 2": zone2HistoricalCount,
+      "Zone 3": zone3HistoricalCount,
+      "Zone 4": zone4HistoricalCount
+    });
+  }, [historicalZonePresence]);
+  
+  // Separate effect to update zone visibility based on zone completions and card positions
+  useEffect(() => {
+    const zone1HistoricalCount = historicalZonePresence["Zone 1"].size;
+    const zone2HistoricalCount = historicalZonePresence["Zone 2"].size;
+    const zone3HistoricalCount = historicalZonePresence["Zone 3"].size;
+    
+    // Check if all cards have reached as far as they can go
+    const allCardsAtMaxPosition = cards.every(card => card.asFarAsCanGo === true);
+    
+    // Update zone visibility based on whether all cards have reached their furthest possible position
+    if (zone1HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 2"]) {
+      setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
+      
+      // Reset asFarAsCanGo for cards that aren't in sticky lanes
+      setCards(prevCards => prevCards.map(card => {
+        // Skip cards in sticky lanes
+        if (card.zone && card.lane) {
+          const laneNumber = getLaneNumber(card.lane);
+          if (isLaneSticky(card.zone, laneNumber)) {
+            return card; // Keep sticky lane cards as asFarAsCanGo=true
+          }
+        }
+        // Reset for non-sticky cards if they're not in the last zone
+        if (card.zone !== "Zone 3" && card.zone !== "Zone 4") {
+          return { ...card, asFarAsCanGo: false };
+        }
+        return card;
+      }));
+    }
+    
+    if (zone2HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 3"]) {
+      setZoneVisibility(prev => ({ ...prev, "Zone 3": true }));
+      
+      // Reset asFarAsCanGo for cards that aren't in sticky lanes
+      setCards(prevCards => prevCards.map(card => {
+        // Skip cards in sticky lanes
+        if (card.zone && card.lane) {
+          const laneNumber = getLaneNumber(card.lane);
+          if (isLaneSticky(card.zone, laneNumber)) {
+            return card; // Keep sticky lane cards as asFarAsCanGo=true
+          }
+        }
+        // Reset for non-sticky cards if they're not in the last zone
+        if (card.zone !== "Zone 4") {
+          return { ...card, asFarAsCanGo: false };
+        }
+        return card;
+      }));
+    }
+    
+    if (zone3HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 4"]) {
+      setZoneVisibility(prev => ({ ...prev, "Zone 4": true }));
+    }
+  }, [cards, zoneVisibility, historicalZonePresence]);
 
   const isValidMove = (
     sourceZone: string, 
@@ -478,6 +511,45 @@ export default function Home() {
       // Extract lane number from droppable ID (e.g., "Zone 1-1" -> "Lane 1")
       const destLaneNumber = destination.droppableId.split("-")[1];
       destLaneName = `Lane ${destLaneNumber}`;
+    }
+
+    // If moving to a processing zone (not holding or not going backwards), 
+    // add this voice to the historical presence for this zone
+    if (destZoneId !== "holding" && getZoneNumber(destZoneId) >= getZoneNumber(sourceZoneId)) {
+      setHistoricalZonePresence(prev => {
+        const updatedZonePresence = { ...prev };
+        updatedZonePresence[destZoneId] = new Set(prev[destZoneId]);
+        updatedZonePresence[destZoneId].add(draggedCard.content);
+        return updatedZonePresence;
+      });
+    }
+    
+    // If moving backwards to a previous zone, remove from historical presence
+    // for current and higher zones (only if being moved back to holding or earlier zone)
+    if (
+      (destZoneId === "holding" && sourceZoneId !== "holding") || 
+      (sourceZoneId !== "holding" && destZoneId !== "holding" && getZoneNumber(destZoneId) < getZoneNumber(sourceZoneId))
+    ) {
+      setHistoricalZonePresence(prev => {
+        const updatedZonePresence = { ...prev };
+        
+        // Get the source zone number
+        const sourceZoneNum = getZoneNumber(sourceZoneId);
+        
+        // Remove from this zone and all higher zones
+        zones.forEach(zone => {
+          if (zone !== "holding") {
+            const zoneNum = getZoneNumber(zone);
+            // If this zone is >= the source zone, remove the voice
+            if (zoneNum >= sourceZoneNum) {
+              updatedZonePresence[zone] = new Set(prev[zone]);
+              updatedZonePresence[zone].delete(draggedCard.content);
+            }
+          }
+        });
+        
+        return updatedZonePresence;
+      });
     }
 
     // Update card position
