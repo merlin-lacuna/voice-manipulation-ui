@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "rimraf .next && echo 'Next.js cache cleared!'",
+    "dev:clean": "npm run clean && next dev",
+    "build:clean": "npm run clean && next build"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -65,6 +68,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }

@@ -28,6 +28,30 @@ const nextConfig = {
     parallelServerCompiles: true,
   },
   output: 'standalone',
+  // Generate a unique build ID each time for cache busting
+  generateBuildId: () => `build_${Date.now()}`,
+  // Add aggressive cache control headers in development
+  headers: async () => {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      },
+    ];
+  },
 }
 
 if (userConfig) {

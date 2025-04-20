@@ -13,7 +13,13 @@ echo Starting frontend server...
 cd /d "%~dp0"
 where pnpm > nul 2>&1
 if %ERRORLEVEL% == 0 (
+    REM Clear Next.js cache first
+    echo Clearing Next.js cache...
+    pnpm clean
     pnpm dev
 ) else (
+    REM Clear Next.js cache first
+    echo Clearing Next.js cache...
+    npm run clean
     npm run dev
 )
