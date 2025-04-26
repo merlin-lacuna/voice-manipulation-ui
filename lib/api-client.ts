@@ -10,11 +10,14 @@ export interface ProcessRequestParams {
   previousZone?: string;
 }
 
+export interface EmotionData {
+  name: string;
+  score: number;
+}
+
 export interface MetadataItem {
-  charisma: number;
-  confidence: number;
-  pitch: number;
-  energy: number;
+  language: EmotionData[];
+  prosody: EmotionData[];
   spectrogram: string;
 }
 

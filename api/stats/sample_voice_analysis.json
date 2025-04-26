@@ -1,0 +1,36 @@
+{
+  "source": {
+    "type": "sample_file",
+    "file_id": "sample-001"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Happiness",
+        "score": 0.6
+      },
+      {
+        "name": "Excitement",
+        "score": 0.6
+      },
+      {
+        "name": "Confidence",
+        "score": 0.6
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Enthusiasm",
+        "score": 0.6
+      },
+      {
+        "name": "Energy",
+        "score": 0.6
+      },
+      {
+        "name": "Warmth",
+        "score": 0.6
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "source": {
+    "type": "registry_file",
+    "file_id": "f1eb0574-56f0-4c0d-85b1-be538b2fc1f9"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Interest",
+        "score": 0.367
+      },
+      {
+        "name": "Aesthetic Appreciation",
+        "score": 0.2969
+      },
+      {
+        "name": "Enthusiasm",
+        "score": 0.2163
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Calmness",
+        "score": 0.3455
+      },
+      {
+        "name": "Concentration",
+        "score": 0.2993
+      },
+      {
+        "name": "Boredom",
+        "score": 0.2174
+      }
+    ]
+  }
+}

@@ -13,6 +13,7 @@ from pathlib import Path
 import librosa
 import soundfile as sf
 import numpy as np
+import json
 
 app = FastAPI(title="Voice Manipulation API")
 
@@ -32,6 +33,9 @@ print(f"Created temporary directory for audio files: {TEMP_DIR}")
 # Directory containing the pregenerated voice files
 VOICE_FILES_DIR = "./voices"
 
+# Directory containing the stats JSON files
+STATS_DIR = "./stats"
+
 # Default voice files for holding zone (initial state)
 VOICE_FILES = {
     "Voice 1": f"{VOICE_FILES_DIR}/voice_1_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",
@@ -48,11 +52,13 @@ class VoiceProcessRequest(BaseModel):
     laneName: str
     previousZone: Optional[str] = None
 
+class EmotionData(BaseModel):
+    name: str
+    score: float
+
 class MetadataItem(BaseModel):
-    charisma: int
-    confidence: int
-    pitch: int
-    energy: int
+    language: Optional[List[EmotionData]] = None
+    prosody: Optional[List[EmotionData]] = None
     spectrogram: str = "./public/placeholder.png"
 
 class VoiceProcessResponse(BaseModel):
@@ -232,30 +238,97 @@ def process_audio(voice_name: str, zone_name: str, lane_name: str, prev_zone_nam
     return file_path
 
 def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> MetadataItem:
-    """Generate placeholder metadata for the voice"""
-    # Vary the metrics slightly for each voice
-    voice_index = int(voice_name.split(' ')[1])
-    lane_index = int(lane_name.split(' ')[1])
-    zone_index = int(zone_name.split(' ')[1])
+    """Load metadata from JSON files in the stats directory"""
+    # Extract voice number, zone number, and lane number
+    voice_number = voice_name.split(" ")[1]
     
-    # Base values with slight variations
-    base = {
-        "Voice 1": {"charisma": 50, "confidence": 30, "pitch": 50, "energy": 35},
-        "Voice 2": {"charisma": 45, "confidence": 35, "pitch": 55, "energy": 30},
-        "Voice 3": {"charisma": 55, "confidence": 25, "pitch": 45, "energy": 40}
-    }
+    # Use same filename pattern as audio files but with .json extension
+    filename_parts = []
     
-    # Apply some variation based on zone and lane
-    variation = (zone_index * 2) + (lane_index * 3)
-    metrics = base.get(voice_name, base["Voice 1"])
+    # Check traversal history to get the correct file
+    for voice, zones in voice_traversal.items():
+        if voice == voice_name:
+            # Use "voice1" format as seen in existing files (no underscore)
+            filename_parts = [f"voice{voice_number}"]
+            
+            # Add zone and lane info from traversal history
+            for z in range(1, 5):  # Zones 1-4
+                z_name = f"Zone {z}"
+                # For zones we've passed through, use recorded lane
+                if z_name in zones and zones[z_name] is not None:
+                    lane_val = zones[z_name]
+                else:
+                    lane_val = "0"
+                
+                filename_parts.append(f"Z{z}")
+                filename_parts.append(f"L{lane_val}")
+            
+            break
     
-    return MetadataItem(
-        charisma=metrics["charisma"] + random.randint(-5, 5) + variation,
-        confidence=metrics["confidence"] + random.randint(-5, 5) + variation,
-        pitch=metrics["pitch"] + random.randint(-5, 5) + variation,
-        energy=metrics["energy"] + random.randint(-5, 5) + variation,
-        spectrogram="./placeholder_spectrogram.png"  # Use placeholder from instructions
+    # Add .json extension (without _stats suffix)
+    stats_filename = "_".join(filename_parts) + ".json"
+    stats_path = os.path.join(STATS_DIR, stats_filename)
+    
+    print(f"Looking for stats file: {stats_path}")
+    
+    # Default response with placeholder data
+    metadata = MetadataItem(
+        language=None,
+        prosody=None,
+        spectrogram="./placeholder_spectrogram.png"
     )
+    
+    # Try to load the stats file
+    try:
+        if os.path.exists(stats_path):
+            with open(stats_path, 'r') as f:
+                stats_data = json.load(f)
+                
+            # Check if the file has the expected structure
+            if "top_emotions" in stats_data:
+                # Convert language data
+                if "language" in stats_data["top_emotions"]:
+                    language_data = [
+                        EmotionData(name=item["name"], score=item["score"])
+                        for item in stats_data["top_emotions"]["language"]
+                    ]
+                    metadata.language = language_data
+                
+                # Convert prosody data
+                if "prosody" in stats_data["top_emotions"]:
+                    prosody_data = [
+                        EmotionData(name=item["name"], score=item["score"])
+                        for item in stats_data["top_emotions"]["prosody"]
+                    ]
+                    metadata.prosody = prosody_data
+        else:
+            print(f"Stats file not found: {stats_path}")
+            # Try sample file as fallback
+            sample_path = os.path.join(STATS_DIR, "sample_voice_analysis.json")
+            if os.path.exists(sample_path):
+                print(f"Using sample stats file: {sample_path}")
+                with open(sample_path, 'r') as f:
+                    stats_data = json.load(f)
+                
+                # Convert language data
+                if "top_emotions" in stats_data and "language" in stats_data["top_emotions"]:
+                    language_data = [
+                        EmotionData(name=item["name"], score=item["score"])
+                        for item in stats_data["top_emotions"]["language"]
+                    ]
+                    metadata.language = language_data
+                
+                # Convert prosody data
+                if "top_emotions" in stats_data and "prosody" in stats_data["top_emotions"]:
+                    prosody_data = [
+                        EmotionData(name=item["name"], score=item["score"])
+                        for item in stats_data["top_emotions"]["prosody"]
+                    ]
+                    metadata.prosody = prosody_data
+    except Exception as e:
+        print(f"Error loading stats file {stats_path}: {e}")
+    
+    return metadata
 
 @app.post("/api/process", response_model=VoiceProcessResponse)
 async def process_voice(request: VoiceProcessRequest):

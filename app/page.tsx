@@ -98,9 +98,10 @@ export default function Home() {
   // State for audio files
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
   
-  // State for error dialog
+  // State for dialogs
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
   const [errorDialogMessage, setErrorDialogMessage] = useState<string>("")
+  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false)
 
   // Check API status on initial load and periodically
   useEffect(() => {
@@ -596,6 +597,13 @@ export default function Home() {
         // Trigger zone glow effect
         setGlowingZone(destZoneId)
         setTimeout(() => setGlowingZone(null), 1000)
+        
+        // Show success dialog when a card is placed in Lane 1 of Zone 4
+        if (destZoneId === "Zone 4" && destLaneName === "Lane 1") {
+          setTimeout(() => {
+            setShowSuccessDialog(true)
+          }, 1000) // Show after processing animation completes
+        }
 
         // Call API and process response
         processVoice({
@@ -679,6 +687,26 @@ export default function Home() {
         </AlertDialogContent>
       </AlertDialog>
       
+      {/* Success Dialog */}
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent className="bg-green-800 text-white border-green-600">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">Mission accomplished</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/90">
+              Thankyou for helping to train the bias
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => setShowSuccessDialog(false)}
+            >
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {/* Main scrollable content area - fixed at 70% with minimum width */}
       <div className="w-[70%] overflow-y-auto p-4 main-pane" style={{ minWidth: "70%", maxWidth: "70%" }}>
         <div className="mb-6 flex justify-between items-center">
@@ -731,12 +759,15 @@ export default function Home() {
                     {...provided.droppableProps}
                     style={{
                       backgroundColor: '#e2e8f0',
-                      minHeight: '100px',
+                      width: '100%',
+                      height: '150px',
                       borderRadius: '0.5rem',
                       padding: '0.5rem',
                       display: 'flex',
                       flexDirection: 'row',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '1rem',
                       overflowX: 'auto',
                       border: '2px dashed #64748b'
                     }}
@@ -757,15 +788,15 @@ export default function Home() {
                                 onClick={() => handleCardClick(card)}
                               >
                                 <Card className={cn(
-                                  "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-48 text-gray-800",
+                                  "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-24 h-32 text-gray-800 flex flex-col justify-between",
                                   playingAudio === card.id && "ring-2 ring-blue-500"
                                 )}>
-                                  <div className="flex items-center justify-between">
-                                    <p className="font-medium">{card.content}</p>
-                                    <Volume2 className="h-4 w-4 text-blue-500" />
+                                  <div className="flex flex-col items-center justify-center">
+                                    <p className="font-medium text-center">{card.content}</p>
+                                    <Volume2 className="h-4 w-4 text-blue-500 mt-2" />
                                   </div>
-                                  <p className="text-xs text-gray-700 mt-1">
-                                    Click to play audio
+                                  <p className="text-xs text-gray-700 text-center">
+                                    Click to play
                                   </p>
                                   {playingAudio === card.id && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-white/70">
@@ -794,9 +825,9 @@ export default function Home() {
           {zoneVisibility["Zone 1"] && (
             <>
               <h2 className="text-xl font-semibold mb-4">Zone 1</h2>
-              <div className="flex flex-row justify-between space-x-4 w-full">
+              <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 1-lane-${laneIndex + 1}`} className="flex-1">
+                  <div key={`Zone 1-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : 
@@ -821,13 +852,14 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: laneIndex === 0 ? '#fef3c7' : laneIndex === 1 ? '#fcd34d' : '#f59e0b',
-                            minHeight: '100px',
+                            width: '200px',
+                            height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
                             display: 'flex',
                             flexDirection: 'row',
                             alignItems: 'center',
-                            width: '100%',
+                            justifyContent: 'center',
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 
@@ -856,13 +888,13 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-amber-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          "p-3 bg-amber-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
-                                        <p className="font-medium">{card.content}</p>
+                                        <p className="font-medium text-center">{card.content}</p>
                                         {processingCard.id === card.id && (
                                           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
                                             <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -893,9 +925,9 @@ export default function Home() {
           {zoneVisibility["Zone 2"] && (
             <>
               <h2 className="text-xl font-semibold mb-4">Zone 2</h2>
-              <div className="flex flex-row justify-between space-x-4 w-full">
+              <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 2-lane-${laneIndex + 1}`} className="flex-1">
+                  <div key={`Zone 2-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : 
@@ -920,13 +952,14 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: laneIndex === 0 ? '#dcfce7' : laneIndex === 1 ? '#86efac' : '#22c55e',
-                            minHeight: '100px',
+                            width: '200px',
+                            height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
                             display: 'flex',
                             flexDirection: 'row',
                             alignItems: 'center',
-                            width: '100%',
+                            justifyContent: 'center',
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 
@@ -955,13 +988,13 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-green-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          "p-3 bg-green-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
-                                        <p className="font-medium">{card.content}</p>
+                                        <p className="font-medium text-center">{card.content}</p>
                                         {processingCard.id === card.id && (
                                           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
                                             <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -992,9 +1025,9 @@ export default function Home() {
           {zoneVisibility["Zone 3"] && (
             <>
               <h2 className="text-xl font-semibold mb-4">Zone 3</h2>
-              <div className="flex flex-row justify-between space-x-4 w-full">
+              <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 3-lane-${laneIndex + 1}`} className="flex-1">
+                  <div key={`Zone 3-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : 
@@ -1019,13 +1052,14 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: laneIndex === 0 ? '#dbeafe' : laneIndex === 1 ? '#93c5fd' : '#3b82f6',
-                            minHeight: '100px',
+                            width: '200px',
+                            height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
                             display: 'flex',
                             flexDirection: 'row',
                             alignItems: 'center',
-                            width: '100%',
+                            justifyContent: 'center',
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 
@@ -1054,13 +1088,13 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-blue-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          "p-3 bg-blue-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
-                                        <p className="font-medium">{card.content}</p>
+                                        <p className="font-medium text-center">{card.content}</p>
                                         {processingCard.id === card.id && (
                                           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
                                             <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -1091,9 +1125,9 @@ export default function Home() {
           {zoneVisibility["Zone 4"] && (
             <>
               <h2 className="text-xl font-semibold mb-4">Zone 4</h2>
-              <div className="flex flex-row justify-between space-x-4 w-full">
+              <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 4-lane-${laneIndex + 1}`} className="flex-1">
+                  <div key={`Zone 4-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 4", laneIndex + 1) ? 'border-2 border-red-500' : 
@@ -1118,13 +1152,14 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: laneIndex === 0 ? '#f9a8d4' : laneIndex === 1 ? '#ec4899' : '#be185d',
-                            minHeight: '100px',
+                            width: '200px',
+                            height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
                             display: 'flex',
                             flexDirection: 'row',
                             alignItems: 'center',
-                            width: '100%',
+                            justifyContent: 'center',
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 4" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 4" ? '0 0 0 4px #ef4444' : 
@@ -1153,13 +1188,13 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-pink-300 shadow-md relative w-48 cursor-pointer text-gray-800",
+                                          "p-3 bg-pink-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
-                                        <p className="font-medium">{card.content}</p>
+                                        <p className="font-medium text-center">{card.content}</p>
                                         {processingCard.id === card.id && (
                                           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
                                             <Loader2 className="h-6 w-6 animate-spin text-blue-500" />

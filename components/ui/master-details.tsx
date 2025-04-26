@@ -85,40 +85,45 @@ export function MasterDetailsSection({
                 </div>
                 
                 {voiceData ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    {/* Language section */}
                     <div>
-                      <div className="flex justify-between text-xs">
-                        <span>Charisma</span>
-                        <span>{voiceData.metadata.charisma}%</span>
-                      </div>
-                      <Progress value={voiceData.metadata.charisma} className="h-1.5" />
+                      <h5 className="text-xs font-semibold mb-2 text-blue-300">Language</h5>
+                      {voiceData.metadata.language ? (
+                        voiceData.metadata.language.map((emotion, index) => (
+                          <div key={`lang-${index}`} className="mb-2">
+                            <div className="flex justify-between text-xs">
+                              <span>{emotion.name}</span>
+                              <span>{Math.round(emotion.score * 100)}%</span>
+                            </div>
+                            <Progress value={Math.round(emotion.score * 100)} className="h-1.5" />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-slate-400 py-2">Could not load language data</div>
+                      )}
                     </div>
                     
+                    {/* Prosody section */}
                     <div>
-                      <div className="flex justify-between text-xs">
-                        <span>Confidence</span>
-                        <span>{voiceData.metadata.confidence}%</span>
-                      </div>
-                      <Progress value={voiceData.metadata.confidence} className="h-1.5" />
+                      <h5 className="text-xs font-semibold mb-2 text-green-300">Prosody</h5>
+                      {voiceData.metadata.prosody ? (
+                        voiceData.metadata.prosody.map((emotion, index) => (
+                          <div key={`prosody-${index}`} className="mb-2">
+                            <div className="flex justify-between text-xs">
+                              <span>{emotion.name}</span>
+                              <span>{Math.round(emotion.score * 100)}%</span>
+                            </div>
+                            <Progress value={Math.round(emotion.score * 100)} className="h-1.5" />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-slate-400 py-2">Could not load prosody data</div>
+                      )}
                     </div>
                     
-                    <div>
-                      <div className="flex justify-between text-xs">
-                        <span>Pitch</span>
-                        <span>{voiceData.metadata.pitch}%</span>
-                      </div>
-                      <Progress value={voiceData.metadata.pitch} className="h-1.5" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-xs">
-                        <span>Energy</span>
-                        <span>{voiceData.metadata.energy}%</span>
-                      </div>
-                      <Progress value={voiceData.metadata.energy} className="h-1.5" />
-                    </div>
-                    
-                    <div className="mt-3">
+                    {/* Spectrogram section */}
+                    <div className="mt-2">
                       <p className="text-xs font-medium mb-1">Spectrogram</p>
                       <div className="bg-slate-800 rounded-md p-1 flex justify-center">
                         <Image 

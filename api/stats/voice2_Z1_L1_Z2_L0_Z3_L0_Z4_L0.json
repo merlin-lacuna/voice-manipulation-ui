@@ -1,0 +1,36 @@
+{
+  "source": {
+    "type": "registry_file",
+    "file_id": "87392fd3-0143-4cae-bcfb-636201ad5932"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Determination",
+        "score": 0.4472
+      },
+      {
+        "name": "Concentration",
+        "score": 0.3952
+      },
+      {
+        "name": "Enthusiasm",
+        "score": 0.2126
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Calmness",
+        "score": 0.1202
+      },
+      {
+        "name": "Determination",
+        "score": 0.1131
+      },
+      {
+        "name": "Boredom",
+        "score": 0.1085
+      }
+    ]
+  }
+}
