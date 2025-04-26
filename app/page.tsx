@@ -9,6 +9,15 @@ import { checkApiStatus, processVoice, playAudio, MetadataItem, ProcessResponse 
 import { MasterDetailsSection } from "@/components/ui/master-details"
 import { ZoneSeparator } from "@/components/ui/zone-separator"
 import { DebugPanel } from "@/components/ui/debug-panel"
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog"
 
 // Types
 type CardType = {
@@ -88,6 +97,10 @@ export default function Home() {
   
   // State for audio files
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
+  
+  // State for error dialog
+  const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
+  const [errorDialogMessage, setErrorDialogMessage] = useState<string>("")
 
   // Check API status on initial load and periodically
   useEffect(() => {
@@ -277,7 +290,7 @@ export default function Home() {
     // Allow moving from holding zone to Zone 1
     if (sourceZone === "holding" && destinationZone === "Zone 1") return true
     
-    // Allow moving to adjacent zones, but only if they're visible
+    // Get zone indices
     const sourceIndex = zones.indexOf(sourceZone)
     const destIndex = zones.indexOf(destinationZone)
     
@@ -291,7 +304,13 @@ export default function Home() {
       return true
     }
     
-    // Can only move to adjacent zones (next or previous)
+    // Can only move to the next zone (forward), not to previous zones
+    // This prevents backward movement between processing zones
+    if (sourceZone !== "holding" && destinationZone !== "holding") {
+      return destIndex === sourceIndex + 1
+    }
+    
+    // For other cases (mainly holding zone interactions), check if zones are adjacent
     return Math.abs(sourceIndex - destIndex) === 1
   }
 
@@ -450,19 +469,26 @@ export default function Home() {
       // Create ghost card for animation
       flyCardBack()
       
-      // Show message for sticky or blocking lanes
+      // Determine the type of invalid move and show appropriate error message
       if (sourceLaneName) {
         const laneNumber = getLaneNumber(sourceLaneName)
         const sourceZoneNum = getZoneNumber(sourceZoneId)
         const destZoneNum = destZoneId ? getZoneNumber(destZoneId) : 0
         
         if (isLaneSticky(sourceZoneId, laneNumber)) {
-          setApiMessage("This card is in a sticky lane and cannot be moved")
-          setTimeout(() => setApiMessage(""), 2000)
+          // Sticky lane case
+          setErrorDialogMessage("Pass Denied")
+          setShowErrorDialog(true)
         } 
         else if (isLaneBlocking(sourceZoneId, laneNumber) && destZoneNum > sourceZoneNum) {
-          setApiMessage(`This card is in a blocking lane and cannot be moved to Zone ${destZoneNum}`)
-          setTimeout(() => setApiMessage(""), 2000)
+          // Blocking lane case
+          setErrorDialogMessage("Pass Denied")
+          setShowErrorDialog(true)
+        }
+        else if (sourceZoneId !== "holding" && destZoneId !== "holding" && destZoneNum < sourceZoneNum) {
+          // Attempting to move backward between processing zones
+          setErrorDialogMessage("Can't go backwards, only forwards")
+          setShowErrorDialog(true)
         }
       }
       
@@ -633,6 +659,26 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-indigo-800 text-white" style={{ minWidth: "100vw" }}>
+      {/* Error Dialog */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent className="bg-red-900 text-white border-red-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">Pass Denied</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/90">
+              {errorDialogMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              className="bg-red-700 hover:bg-red-800 text-white"
+              onClick={() => setShowErrorDialog(false)}
+            >
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {/* Main scrollable content area - fixed at 70% with minimum width */}
       <div className="w-[70%] overflow-y-auto p-4 main-pane" style={{ minWidth: "70%", maxWidth: "70%" }}>
         <div className="mb-6 flex justify-between items-center">
