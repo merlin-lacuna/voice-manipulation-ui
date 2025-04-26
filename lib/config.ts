@@ -6,7 +6,7 @@
  * Lane numbers are 1-based (Lane 1, Lane 2, Lane 3)
  */
 export const stickyLanesConfig: Record<string, number[]> = {
-  "Zone 3": [3]     // Lane 3 in Zone 1 is sticky
+  "Zone 3": [2]     // Lane 3 in Zone 1 is sticky
   // "Zone 2": [2, 3],   Lanes 2 and 3 in Zone 2 are sticky
   // "Zone 3": [1]       Lane 1 in Zone 3 is sticky
 }
@@ -19,7 +19,8 @@ export const stickyLanesConfig: Record<string, number[]> = {
  * Lane numbers are 1-based (Lane 1, Lane 2, Lane 3)
  */
 export const blockingLanesConfig: Record<string, number[]> = {
-  "Zone 2": [1],  // Lanes 1 and 2 in Zone 1 block progression to Zone 2
-  // "Zone 2": [1],     Lane 1 in Zone 2 blocks progression to Zone 3
-  // "Zone 3": [3]      Lane 3 in Zone 3 would block progression to Zone 4 (if it existed)
+  "Zone 1": [2],  // Lanes 1 and 2 in Zone 1 block progression to Zone 2
+  "Zone 2": [3],   //  Lane 1 in Zone 2 blocks progression to Zone 3
+  "Zone 3": [3],  
+  "Zone 4": [2,3],    //  Lane 3 in Zone 3 would block progression to Zone 4 (if it existed)
 }

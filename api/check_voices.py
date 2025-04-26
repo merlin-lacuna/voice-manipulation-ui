@@ -8,9 +8,9 @@ import sys
 
 # Voice files that should be available
 EXPECTED_VOICE_FILES = [
-    "../voices/everyday_cheerful_middle-aged_2.wav",  # Path relative to /api directory
-    "../voices/everyday_irritated_female_5.wav",
-    "../voices/everyday_nervous_non-binary_3.wav"
+    "./voices/voice_1_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",  # Path relative to /api directory
+    "./voices/voice_2_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",
+    "./voices/voice_3_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3"
 ]
 
 def check_voices():

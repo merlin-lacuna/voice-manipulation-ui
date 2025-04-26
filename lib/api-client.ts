@@ -7,6 +7,7 @@ export interface ProcessRequestParams {
   cardName: string;
   zoneName: string;
   laneName: string;
+  previousZone?: string;
 }
 
 export interface MetadataItem {
@@ -29,28 +30,59 @@ export interface ProcessResponse {
  * Process a voice card by sending a request to the backend API
  */
 export async function processVoice(params: ProcessRequestParams): Promise<ProcessResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/process`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(params),
-  });
+  try {
+    // Add timeout to prevent long-hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(`${API_BASE_URL}/api/process`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    // Handle errors gracefully
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `API request failed with status ${response.status}`);
-  }
+    if (!response.ok) {
+      // Handle errors gracefully
+      let errorMessage = `API request failed with status ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+      } catch (e) {
+        // If JSON parsing fails, use the default error message
+        console.error("Failed to parse error response:", e);
+      }
+      throw new Error(errorMessage);
+    }
 
-  const data: ProcessResponse = await response.json();
-  
-  // Convert relative URLs to absolute
-  if (data.audioFile) {
-    data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+    const data: ProcessResponse = await response.json();
+    
+    // Convert relative URLs to absolute
+    if (data.audioFile) {
+      data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Process Voice API Error:', error);
+    
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('API request timed out. The server might be overloaded or unreachable.');
+      }
+      throw error; // Re-throw the original error
+    }
+    
+    // For unknown errors
+    throw new Error('An unknown error occurred while processing the voice');
   }
-  
-  return data;
 }
 
 /**
@@ -105,10 +137,31 @@ export async function getOperations() {
  */
 export async function checkApiStatus(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/`);
+    // Add timeout to fetch to fail faster if API is unreachable
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch(`${API_BASE_URL}/`, {
+      signal: controller.signal,
+      // Prevent caching issues
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.error('API Status Check Failed:', error);
+    // Handle abort errors more gracefully
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.log('API request timed out');
+      } else {
+        console.log(`API error: ${error.message}`);
+      }
+    }
     return false;
   }
 }

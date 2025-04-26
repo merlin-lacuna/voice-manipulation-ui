@@ -29,11 +29,14 @@ app.add_middleware(
 TEMP_DIR = tempfile.mkdtemp()
 print(f"Created temporary directory for audio files: {TEMP_DIR}")
 
-# Voice files mapping with correct paths relative to project root
+# Directory containing the pregenerated voice files
+VOICE_FILES_DIR = "./voices"
+
+# Default voice files for holding zone (initial state)
 VOICE_FILES = {
-    "Voice 1": "../voices/everyday_cheerful_middle-aged_2.wav",
-    "Voice 2": "../voices/everyday_irritated_female_5.wav",
-    "Voice 3": "../voices/everyday_nervous_non-binary_3.wav"
+    "Voice 1": f"{VOICE_FILES_DIR}/voice_1_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",
+    "Voice 2": f"{VOICE_FILES_DIR}/voice_2_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",
+    "Voice 3": f"{VOICE_FILES_DIR}/voice_3_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3"
 }
 
 # Keep track of processed files for each voice
@@ -43,6 +46,7 @@ class VoiceProcessRequest(BaseModel):
     cardName: str
     zoneName: str
     laneName: str
+    previousZone: Optional[str] = None
 
 class MetadataItem(BaseModel):
     charisma: int
@@ -62,7 +66,15 @@ class VoiceProcessResponse(BaseModel):
 ZONE_OPERATIONS = {
     "Zone 1": "initialization",
     "Zone 2": "feature_extraction",
-    "Zone 3": "transformation"
+    "Zone 3": "transformation",
+    "Zone 4": "finalization"
+}
+
+# Keep track of voice traversal history for each voice
+voice_traversal = {
+    "Voice 1": {"Zone 1": None, "Zone 2": None, "Zone 3": None, "Zone 4": None},
+    "Voice 2": {"Zone 1": None, "Zone 2": None, "Zone 3": None, "Zone 4": None},
+    "Voice 3": {"Zone 1": None, "Zone 2": None, "Zone 3": None, "Zone 4": None}
 }
 
 @app.get("/")
@@ -140,57 +152,84 @@ async def test_audio():
     
     return result
 
-def process_audio(voice_name: str, zone_name: str, lane_name: str) -> str:
-    """Process audio file based on zone and lane"""
-    # Get original voice file path
-    original_file = VOICE_FILES.get(voice_name)
-    if not original_file or not os.path.exists(original_file):
-        raise Exception(f"Voice file not found: {original_file}")
+def reset_traversal_history(voice_name: str, zone_name: str) -> None:
+    """Reset the traversal history for a voice when moving backwards"""
+    # Get the zone number to reset from
+    zone_num = int(zone_name.split(" ")[1])
     
-    # Load the audio file
-    if zone_name == "Zone 1":
-        # For Zone 1, we use the original file
-        input_file = original_file
-    else:
-        # For subsequent zones, use the processed file from the previous zone
-        prev_zone = f"Zone {int(zone_name.split(' ')[1]) - 1}"
-        input_file = processed_files.get(f"{voice_name}_{prev_zone}_{lane_name}")
-        if not input_file or not os.path.exists(input_file):
-            # Fallback to original if processed file not found
-            input_file = original_file
+    # Reset this zone and all higher zones
+    for z_num in range(zone_num, 5):  # Reset from current zone to Zone 4
+        z_name = f"Zone {z_num}"
+        voice_traversal[voice_name][z_name] = None
     
-    # Load the audio file
-    y, sr = librosa.load(input_file, sr=None)
+    print(f"Reset traversal history for {voice_name} from zone {zone_name}: {voice_traversal[voice_name]}")
+
+def get_voice_filename(voice_name: str, zone_name: str, lane_name: str, moving_backwards: bool = False) -> str:
+    """Generate the correct filename based on traversal history"""
+    # Extract voice number (e.g., "Voice 1" -> "1")
+    voice_number = voice_name.split(" ")[1]
     
-    # Process based on lane
-    lane_number = int(lane_name.split(' ')[1])
+    # Extract lane number (e.g., "Lane 3" -> "3")
+    lane_number = lane_name.split(" ")[1]
     
-    if lane_number == 1:
-        # Lower pitch by 20%
-        y_processed = librosa.effects.pitch_shift(y, sr=sr, n_steps=-2.4)  # About 20% lower
-    elif lane_number == 2:
-        # Raise pitch by 20%
-        y_processed = librosa.effects.pitch_shift(y, sr=sr, n_steps=2.4)  # About 20% higher
-    elif lane_number == 3:
-        # Tremolo effect - modulate pitch up and down
-        # Simulate tremolo by creating a simple oscillation
-        time_array = np.arange(0, len(y)) / sr
-        tremolo_rate = 4  # 4 Hz for 250ms cycle
-        depth = 0.5
-        tremolo = 1.0 + depth * np.sin(2 * np.pi * tremolo_rate * time_array)
-        y_processed = y * tremolo
-    else:
-        # No processing for other lanes
-        y_processed = y
+    # Convert to numeric for array indexing
+    current_zone_num = int(zone_name.split(" ")[1])
     
-    # Save the processed audio
-    output_path = os.path.join(TEMP_DIR, f"{voice_name}_{zone_name}_{lane_name}.wav")
-    sf.write(output_path, y_processed, sr)
+    # If moving backwards, reset history for this zone and higher zones
+    if moving_backwards:
+        reset_traversal_history(voice_name, zone_name)
     
-    # Store the path for future reference
-    processed_files[f"{voice_name}_{zone_name}_{lane_name}"] = output_path
+    # Update traversal history for this voice at the current zone
+    voice_traversal[voice_name][zone_name] = lane_number
     
-    return output_path
+    # Build the filename based on traversal history
+    filename_parts = [f"voice_{voice_number}"]
+    
+    # Add zone/lane combinations in order
+    for z_num in range(1, 5):  # Zones 1-4
+        z_name = f"Zone {z_num}"
+        
+        # If the voice has passed through this zone, use the recorded lane
+        if z_num <= current_zone_num:
+            # Use the recorded lane for zones we've passed through
+            lane_val = voice_traversal[voice_name][z_name] if voice_traversal[voice_name][z_name] else "0"
+        else:
+            # Use "0" for zones we haven't reached yet
+            lane_val = "0"
+            
+        filename_parts.append(f"Z{z_num}")
+        filename_parts.append(f"L{lane_val}")
+    
+    # Construct the complete filename
+    filename = "_".join(filename_parts) + ".mp3"
+    return filename
+
+def process_audio(voice_name: str, zone_name: str, lane_name: str, prev_zone_name: str = None) -> str:
+    """Get the appropriate audio file based on voice traversal history"""
+    # Determine if we're moving backwards
+    moving_backwards = False
+    if prev_zone_name and zone_name != "holding":
+        prev_zone_num = int(prev_zone_name.split(" ")[1]) if prev_zone_name != "holding" else 0
+        current_zone_num = int(zone_name.split(" ")[1])
+        moving_backwards = current_zone_num < prev_zone_num
+    
+    # Generate the filename based on traversal history
+    filename = get_voice_filename(voice_name, zone_name, lane_name, moving_backwards)
+    
+    # Full path to the audio file
+    file_path = os.path.join(VOICE_FILES_DIR, filename)
+    
+    # Verify file exists
+    if not os.path.exists(file_path):
+        print(f"Warning: Expected file not found: {file_path}")
+        # Use fallback file if the specific one doesn't exist
+        voice_number = voice_name.split(" ")[1]
+        fallback_file = os.path.join(VOICE_FILES_DIR, f"voice_{voice_number}_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3")
+        if os.path.exists(fallback_file):
+            return fallback_file
+        raise Exception(f"Voice file not found: {file_path}")
+    
+    return file_path
 
 def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> MetadataItem:
     """Generate placeholder metadata for the voice"""
@@ -236,22 +275,23 @@ async def process_voice(request: VoiceProcessRequest):
     
     try:
         if request.zoneName == "holding":
-            # Return original audio file for holding zone
+            # Return default starting audio file for holding zone
+            voice_number = request.cardName.split(" ")[1]
             voice_path = VOICE_FILES.get(request.cardName)
             
             if voice_path:
                 print(f"Found voice path for {request.cardName}: {voice_path}")
                 if os.path.exists(voice_path):
                     print(f"File exists at {voice_path}")
-                    # Direct path to the file for simplicity
-                    result["audioFile"] = f"/audio/{request.cardName}"
-                    result["message"] = f"Playing original {request.cardName}"
+                    # Serve the file directly
+                    result["audioFile"] = f"/processed/{os.path.basename(voice_path)}"
+                    result["message"] = f"Playing {request.cardName} in holding zone"
                 else:
                     print(f"File does not exist at {voice_path}")
-                    # List all files in the voices directory
-                    if os.path.exists("./voices"):
-                        voices_files = os.listdir("./voices")
-                        print(f"Files in ./voices: {voices_files}")
+                    # List files in the voices directory
+                    if os.path.exists(VOICE_FILES_DIR):
+                        voices_files = os.listdir(VOICE_FILES_DIR)
+                        print(f"Files in {VOICE_FILES_DIR}: {voices_files[:5]}...")
                     result["status"] = "error"
                     result["message"] = f"Voice file {voice_path} not found"
             else:
@@ -259,12 +299,17 @@ async def process_voice(request: VoiceProcessRequest):
                 result["status"] = "error" 
                 result["message"] = f"Voice not configured: {request.cardName}"
         else:
-            # Process audio for zones
+            # Get appropriate audio file based on traversal path
             try:
-                processed_path = process_audio(request.cardName, request.zoneName, request.laneName)
+                # Get the file path based on traversal history
+                voice_file_path = process_audio(request.cardName, request.zoneName, request.laneName, request.previousZone)
+                
+                # Copy the file to temp directory for serving
+                file_name = os.path.basename(voice_file_path)
+                temp_file_path = os.path.join(TEMP_DIR, file_name)
+                shutil.copy2(voice_file_path, temp_file_path)
                 
                 # Set relative path for client to access
-                file_name = os.path.basename(processed_path)
                 result["audioFile"] = f"/processed/{file_name}"
                 
                 # Generate placeholder metadata
@@ -272,11 +317,18 @@ async def process_voice(request: VoiceProcessRequest):
                 
                 # Generate message based on zone
                 if request.zoneName == "Zone 1":
-                    result["message"] = f"{request.cardName} has been processed in {request.laneName} of {request.zoneName}."
+                    result["message"] = f"{request.cardName} is now in {request.laneName} of {request.zoneName}."
                 elif request.zoneName == "Zone 2":
-                    result["message"] = f"{request.cardName} is now in the second phase in {request.laneName} of {request.zoneName}."
+                    result["message"] = f"{request.cardName} has moved to {request.laneName} of {request.zoneName}."
                 elif request.zoneName == "Zone 3":
-                    result["message"] = f"Final processing of {request.cardName} in {request.laneName} of {request.zoneName}."
+                    result["message"] = f"{request.cardName} is now in {request.laneName} of {request.zoneName}."
+                elif request.zoneName == "Zone 4":
+                    result["message"] = f"Final zone reached: {request.cardName} is in {request.laneName} of {request.zoneName}."
+                
+                # Log the traversal path and filename being used
+                print(f"Voice traversal for {request.cardName}: {voice_traversal[request.cardName]}")
+                print(f"Using audio file: {file_name}")
+                
             except Exception as e:
                 print(f"Error processing audio: {e}")
                 raise
@@ -297,15 +349,28 @@ async def process_voice(request: VoiceProcessRequest):
 async def get_processed_file(file_name: str):
     """Return a processed audio file"""
     print(f"Request for processed file: {file_name}")
+    
+    # First try the temp directory
     file_path = os.path.join(TEMP_DIR, file_name)
     
+    # If not in temp dir, try the voices directory
     if not os.path.exists(file_path):
-        print(f"ERROR: Processed file not found: {file_path}")
-        print(f"Contents of temp directory: {os.listdir(TEMP_DIR)}")
-        raise HTTPException(status_code=404, detail=f"Processed file not found: {file_path}")
+        print(f"File not found in temp dir: {file_path}")
+        voice_file_path = os.path.join(VOICE_FILES_DIR, file_name)
+        
+        if os.path.exists(voice_file_path):
+            print(f"Found file in voices directory: {voice_file_path}")
+            file_path = voice_file_path
+        else:
+            print(f"ERROR: File not found in any location: {file_name}")
+            print(f"Contents of temp directory: {os.listdir(TEMP_DIR)}")
+            print(f"Contents of voices directory: {os.listdir(VOICE_FILES_DIR)[:5]}...")
+            raise HTTPException(status_code=404, detail=f"File not found: {file_name}")
     
-    print(f"Returning processed file: {file_path}")
-    return FileResponse(file_path, media_type="audio/wav")
+    print(f"Returning file: {file_path}")
+    # Determine content type based on file extension
+    media_type = "audio/mpeg" if file_path.endswith(".mp3") else "audio/wav"
+    return FileResponse(file_path, media_type=media_type)
     
 @app.get("/api/operations")
 async def get_operations():

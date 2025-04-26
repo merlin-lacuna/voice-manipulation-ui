@@ -575,7 +575,8 @@ export default function Home() {
         processVoice({
           cardName: card.content,
           zoneName: destZoneId,
-          laneName: destLaneName
+          laneName: destLaneName,
+          previousZone: sourceZoneId
         }).then((response: ProcessResponse) => {
           setApiMessage(response.message)
           
