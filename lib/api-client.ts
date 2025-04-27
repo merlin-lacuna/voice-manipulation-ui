@@ -16,9 +16,14 @@ export interface EmotionData {
 }
 
 export interface MetadataItem {
-  language: EmotionData[];
-  prosody: EmotionData[];
-  spectrogram: string;
+  language?: EmotionData[];
+  prosody?: EmotionData[];
+  spectrogram?: string;
+  // These fields might be added in the future
+  charisma?: number;
+  confidence?: number;
+  pitch?: number;
+  energy?: number;
 }
 
 export interface ProcessResponse {
@@ -70,6 +75,16 @@ export async function processVoice(params: ProcessRequestParams): Promise<Proces
     // Convert relative URLs to absolute
     if (data.audioFile) {
       data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+    }
+    
+    // Convert spectrogram URL to absolute if present
+    if (data.metadata?.spectrogram && !data.metadata.spectrogram.startsWith('http')) {
+      console.log('Original spectrogram URL:', data.metadata.spectrogram);
+      console.log('API base URL:', API_BASE_URL);
+      data.metadata.spectrogram = `${API_BASE_URL}${data.metadata.spectrogram}`;
+      console.log('FIXED! Converted spectrogram URL to:', data.metadata.spectrogram);
+    } else {
+      console.log('Skipped URL conversion for:', data.metadata?.spectrogram);
     }
     
     return data;

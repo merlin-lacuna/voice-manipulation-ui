@@ -36,6 +36,9 @@ VOICE_FILES_DIR = "./voices"
 # Directory containing the stats JSON files
 STATS_DIR = "./stats"
 
+# Directory containing the spectrogram images
+SPECTROGRAMS_DIR = "./spectrograms"
+
 # Default voice files for holding zone (initial state)
 VOICE_FILES = {
     "Voice 1": f"{VOICE_FILES_DIR}/voice_1_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3",
@@ -59,7 +62,7 @@ class EmotionData(BaseModel):
 class MetadataItem(BaseModel):
     language: Optional[List[EmotionData]] = None
     prosody: Optional[List[EmotionData]] = None
-    spectrogram: str = "./public/placeholder.png"
+    spectrogram: str = "/spectrograms/default.png"  # Use a real spectrogram path instead of placeholder
 
 class VoiceProcessResponse(BaseModel):
     message: str
@@ -83,6 +86,16 @@ voice_traversal = {
     "Voice 3": {"Zone 1": None, "Zone 2": None, "Zone 3": None, "Zone 4": None}
 }
 
+# Statistics for tracking spectrogram matches
+spectrogram_stats = {
+    "exact_matches": 0,
+    "fallbacks": 0,
+    "placeholders": 0,
+    "total_requests": 0,
+    "requests_by_voice": {"Voice 1": 0, "Voice 2": 0, "Voice 3": 0},
+    "errors": {}
+}
+
 @app.get("/")
 async def read_root():
     return {"status": "API is running", "version": "1.0.0"}
@@ -104,8 +117,46 @@ async def debug_info():
         },
         "working_directory": os.getcwd(),
         "python_path": sys.path,
+        "spectrogram_stats": spectrogram_stats,
     }
     return info
+
+@app.get("/spectrogram-stats")
+async def get_spectrogram_stats():
+    """Return statistics about spectrogram matching"""
+    global spectrogram_stats
+    
+    # Calculate match rates
+    total = spectrogram_stats["total_requests"]
+    stats = {
+        "raw_stats": spectrogram_stats,
+        "match_rates": {}
+    }
+    
+    if total > 0:
+        stats["match_rates"] = {
+            "exact_match_rate": (spectrogram_stats["exact_matches"] / total) * 100,
+            "fallback_rate": (spectrogram_stats["fallbacks"] / total) * 100,
+            "placeholder_rate": (spectrogram_stats["placeholders"] / total) * 100
+        }
+    
+    # Count available spectrograms
+    if os.path.exists(SPECTROGRAMS_DIR):
+        spectrograms = [f for f in os.listdir(SPECTROGRAMS_DIR) if f.endswith(".png")]
+        stats["available_spectrograms"] = len(spectrograms)
+        
+        # Count by voice
+        voice_counts = {}
+        for spec in spectrograms:
+            if spec.startswith("voice_"):
+                parts = spec.split("_")
+                if len(parts) > 1:
+                    voice_num = parts[1]
+                    voice_counts[f"Voice {voice_num}"] = voice_counts.get(f"Voice {voice_num}", 0) + 1
+        
+        stats["spectrograms_by_voice"] = voice_counts
+    
+    return stats
 
 @app.get("/audio/{voice_id}")
 async def get_audio(voice_id: str):
@@ -239,8 +290,13 @@ def process_audio(voice_name: str, zone_name: str, lane_name: str, prev_zone_nam
 
 def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> MetadataItem:
     """Load metadata from JSON files in the stats directory"""
+    global spectrogram_stats
+    
     # Extract voice number, zone number, and lane number
     voice_number = voice_name.split(" ")[1]
+    
+    # Track requests by voice
+    spectrogram_stats["requests_by_voice"][voice_name] = spectrogram_stats["requests_by_voice"].get(voice_name, 0) + 1
     
     # Use same filename pattern as audio files but with .json extension
     filename_parts = []
@@ -248,8 +304,8 @@ def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> Metada
     # Check traversal history to get the correct file
     for voice, zones in voice_traversal.items():
         if voice == voice_name:
-            # Use "voice1" format as seen in existing files (no underscore)
-            filename_parts = [f"voice{voice_number}"]
+            # Use "voice_1" format as seen in spectrogram files (with underscore)
+            filename_parts = [f"voice_{voice_number}"]
             
             # Add zone and lane info from traversal history
             for z in range(1, 5):  # Zones 1-4
@@ -271,11 +327,35 @@ def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> Metada
     
     print(f"Looking for stats file: {stats_path}")
     
-    # Default response with placeholder data
+    # Get the correct spectrogram filename based on voice traversal
+    spectrogram_filename = "_".join(filename_parts) + ".png"
+    spectrogram_path = os.path.join(SPECTROGRAMS_DIR, spectrogram_filename)
+    
+    # Log the path we're looking for
+    print(f"Looking for spectrogram: {spectrogram_path}")
+    
+    # Default spectrogram URL - we'll always use the direct spectrogram path
+    spectrogram_url = f"/spectrograms/{spectrogram_filename}"
+    
+    # Check if the precise spectrogram exists and log result
+    if os.path.exists(spectrogram_path):
+        print(f"MATCH: Found exact spectrogram match: {spectrogram_filename}")
+    else:
+        print(f"NO MATCH: Exact spectrogram not found: {spectrogram_filename}")
+        # Try to find any spectrogram for this voice as fallback
+        if not os.path.exists(spectrogram_path) and os.path.exists(SPECTROGRAMS_DIR):
+            for f in os.listdir(SPECTROGRAMS_DIR):
+                if f.startswith(f"voice_{voice_number}_") and f.endswith(".png"):
+                    fallback_spectrogram = f
+                    print(f"AUTO-FALLBACK: Will use {fallback_spectrogram} as fallback")
+                    spectrogram_url = f"/spectrograms/{fallback_spectrogram}"
+                    break
+    
+    # Default response with spectrogram data
     metadata = MetadataItem(
         language=None,
         prosody=None,
-        spectrogram="./placeholder_spectrogram.png"
+        spectrogram=spectrogram_url  # Always use a spectrograms/ URL, never a placeholder
     )
     
     # Try to load the stats file
@@ -385,8 +465,19 @@ async def process_voice(request: VoiceProcessRequest):
                 # Set relative path for client to access
                 result["audioFile"] = f"/processed/{file_name}"
                 
-                # Generate placeholder metadata
+                # Generate metadata with spectrogram
                 result["metadata"] = generate_metadata(request.cardName, request.zoneName, request.laneName)
+                
+                # Debug: log the actual spectrogram URL being sent
+                print(f"DEBUG: Sending spectrogram URL to client: {result['metadata'].spectrogram if result['metadata'] else 'None'}")
+                
+                # Crucial check - make sure we're never returning placeholder URLs
+                if '/placeholder' in result['metadata'].spectrogram:
+                    print("WARNING: Still sending placeholder URL! This is wrong!")
+                    # Force an actual spectrogram URL
+                    voice_number = request.cardName.split(" ")[1]
+                    result['metadata'].spectrogram = f"/spectrograms/voice_{voice_number}_Z1_L0_Z2_L0_Z3_L0_Z4_L0.png"
+                    print(f"FIXED: Changed to {result['metadata'].spectrogram}")
                 
                 # Generate message based on zone
                 if request.zoneName == "Zone 1":
@@ -444,6 +535,76 @@ async def get_processed_file(file_name: str):
     # Determine content type based on file extension
     media_type = "audio/mpeg" if file_path.endswith(".mp3") else "audio/wav"
     return FileResponse(file_path, media_type=media_type)
+
+@app.get("/spectrograms/{file_name}")
+async def get_spectrogram(file_name: str):
+    """Return a spectrogram image file"""
+    global spectrogram_stats
+    
+    # Update statistics
+    spectrogram_stats["total_requests"] += 1
+    
+    print(f"Request for spectrogram: {file_name}")
+    
+    # Force the correct content type for images
+    headers = {"Cache-Control": "max-age=3600, public"}
+    
+    # Full path to the spectrogram file in the spectrograms directory
+    file_path = os.path.join(SPECTROGRAMS_DIR, file_name)
+    
+    # Check if the spectrogram exists
+    if os.path.exists(file_path):
+        # Update statistics
+        spectrogram_stats["exact_matches"] += 1
+        match_rate = (spectrogram_stats["exact_matches"] / spectrogram_stats["total_requests"]) * 100
+        
+        print(f"EXACT MATCH: Serving exact spectrogram: {file_name}")
+        print(f"STATS: Exact matches: {spectrogram_stats['exact_matches']}/{spectrogram_stats['total_requests']} ({match_rate:.1f}%)")
+        return FileResponse(file_path, media_type="image/png", headers=headers)
+    
+    # If not found, try to find any similar filename as a fallback
+    print(f"NOT FOUND: Exact spectrogram not found: {file_path}")
+    
+    # Extract voice number from the filename pattern (voice_X_...)
+    if file_name.startswith("voice_"):
+        parts = file_name.split("_")
+        if len(parts) > 1:
+            voice_num = parts[1]
+            # Look for any spectrogram with this voice number
+            if os.path.exists(SPECTROGRAMS_DIR):
+                possible_matches = []
+                for f in os.listdir(SPECTROGRAMS_DIR):
+                    if f.startswith(f"voice_{voice_num}_") and f.endswith(".png"):
+                        possible_matches.append(f)
+                
+                if possible_matches:
+                    # Update statistics
+                    spectrogram_stats["fallbacks"] += 1
+                    fallback_rate = (spectrogram_stats["fallbacks"] / spectrogram_stats["total_requests"]) * 100
+                    
+                    # Use the first match as fallback
+                    fallback_file = os.path.join(SPECTROGRAMS_DIR, possible_matches[0])
+                    print(f"FALLBACK: Using voice-based fallback spectrogram: {os.path.basename(fallback_file)}")
+                    print(f"FALLBACK REASON: Requested '{file_name}' but using '{os.path.basename(fallback_file)}' instead")
+                    print(f"STATS: Fallbacks: {spectrogram_stats['fallbacks']}/{spectrogram_stats['total_requests']} ({fallback_rate:.1f}%)")
+                    return FileResponse(fallback_file, media_type="image/png", headers=headers)
+                else:
+                    print(f"NO FALLBACK: No alternative spectrograms found for voice {voice_num}")
+    
+    # Last resort: use the default placeholder from the public directory
+    placeholder_path = "../public/placeholder_spectrogram.png"
+    if os.path.exists(placeholder_path):
+        # Update statistics
+        spectrogram_stats["placeholders"] += 1
+        placeholder_rate = (spectrogram_stats["placeholders"] / spectrogram_stats["total_requests"]) * 100
+        
+        print(f"PLACEHOLDER: Using default placeholder spectrogram (no match found)")
+        print(f"STATS: Placeholders: {spectrogram_stats['placeholders']}/{spectrogram_stats['total_requests']} ({placeholder_rate:.1f}%)")
+        return FileResponse(placeholder_path, media_type="image/png", headers=headers)
+    
+    # If all else fails, return a 404
+    print(f"ERROR: No spectrogram found for {file_name} and no placeholder available")
+    raise HTTPException(status_code=404, detail=f"Spectrogram not found: {file_name}")
     
 @app.get("/api/operations")
 async def get_operations():

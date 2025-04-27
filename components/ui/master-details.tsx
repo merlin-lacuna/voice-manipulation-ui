@@ -126,12 +126,11 @@ export function MasterDetailsSection({
                     <div className="mt-2">
                       <p className="text-xs font-medium mb-1">Spectrogram</p>
                       <div className="bg-slate-800 rounded-md p-1 flex justify-center">
-                        <Image 
-                          src="/placeholder_spectrogram.png" 
+                        <img 
+                          src={voiceData.metadata.spectrogram}
                           alt={`${voice} spectrogram`}
-                          className="h-24 w-full object-cover"
-                          width={150}
-                          height={75}
+                          className="h-24 w-full object-contain"
+                          loading="lazy"
                         />
                       </div>
                     </div>
