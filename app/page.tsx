@@ -127,7 +127,33 @@ export default function Home() {
 
   // Define zones and lanes
   const zones = ["holding", "Zone 1", "Zone 2", "Zone 3", "Zone 4"]
+  
+  // Internal lane identifiers (used for logic - don't change these)
   const lanes = ["Lane 1", "Lane 2", "Lane 3"]
+  
+  // Display names for lanes (cosmetic only - customize these)
+  const laneDisplayNames = {
+    "Zone 1": {
+      "Lane 1": "High",
+      "Lane 2": "Medium", 
+      "Lane 3": "Low"
+    },
+    "Zone 2": {
+      "Lane 1": "Fast",
+      "Lane 2": "Moderate", 
+      "Lane 3": "Slow"
+    },
+    "Zone 3": {
+      "Lane 1": "Technical",
+      "Lane 2": "Standard", 
+      "Lane 3": "Simple"
+    },
+    "Zone 4": {
+      "Lane 1": "Neutral",
+      "Lane 2": "Regional", 
+      "Lane 3": "Strong"
+    }
+  }
 
   // Track mouse position during drag
   useEffect(() => {
@@ -843,7 +869,7 @@ export default function Home() {
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : 
                           isLaneBlocking("Zone 1", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
-                        {lane}
+                        {laneDisplayNames["Zone 1"][lane]}
                         {isLaneSticky("Zone 1", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
@@ -943,7 +969,7 @@ export default function Home() {
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : 
                           isLaneBlocking("Zone 2", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
-                        {lane}
+                        {laneDisplayNames["Zone 2"][lane]}
                         {isLaneSticky("Zone 2", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
@@ -1043,7 +1069,7 @@ export default function Home() {
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : 
                           isLaneBlocking("Zone 3", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
-                        {lane}
+                        {laneDisplayNames["Zone 3"][lane]}
                         {isLaneSticky("Zone 3", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
@@ -1143,7 +1169,7 @@ export default function Home() {
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 4", laneIndex + 1) ? 'border-2 border-red-500' : 
                           isLaneBlocking("Zone 4", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
-                        {lane}
+                        {laneDisplayNames["Zone 4"][lane]}
                         {isLaneSticky("Zone 4", laneIndex + 1) && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
