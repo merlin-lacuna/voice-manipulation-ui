@@ -60,7 +60,7 @@ export function CircularProgress({
   const totalPossible = Object.keys(zoneCompletions).length * totalVoices
   
   return (
-    <Card className="p-2.5 flex flex-col items-center bg-slate-800 border-slate-700 text-white">
+    <Card className="p-2.5 flex flex-col items-center bg-[#322b98] border-indigo-900 text-white">
       <div className="text-lg font-medium mb-1">Progress</div>
       <div className="h-56 w-56 relative">
         <ResponsiveContainer width="100%" height="100%">
@@ -93,7 +93,7 @@ export function CircularProgress({
         </ResponsiveContainer>
         
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center bg-slate-900 rounded-full w-24 h-24 flex flex-col items-center justify-center">
+          <div className="text-center bg-indigo-950 rounded-full w-24 h-24 flex flex-col items-center justify-center">
             <div className="text-2xl font-bold">{totalComplete}/{totalPossible}</div>
             <div className="text-xs text-slate-400">Voices</div>
           </div>

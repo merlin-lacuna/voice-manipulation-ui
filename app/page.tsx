@@ -709,7 +709,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-indigo-800 text-white" style={{ minWidth: "100vw" }}>
+    <div className="flex h-screen overflow-hidden bg-[#3730A3] text-white" style={{ minWidth: "100vw" }}>
       {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
         <AlertDialogContent className="bg-red-900 text-white border-red-700">
@@ -767,11 +767,13 @@ export default function Home() {
             Pick up the voices and place them in one of the boxes
           </p>
 
+          {/* Status message panel (commented out for now, can be re-enabled later)
           {apiMessage && (
             <div className="mb-6 p-4 bg-indigo-700 rounded-lg border border-indigo-600">
               <p>{apiMessage}</p>
             </div>
           )}
+          */}
         </div>
 
         {/* Ghost Card for Animation */}
@@ -795,10 +797,10 @@ export default function Home() {
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Holding Zone */}
           <div className="mb-4 max-w-4xl mx-auto">
-            <h2 className="text-xl font-semibold mb-4">Starting Zone</h2>
-            <div className="flex flex-row justify-center gap-40 w-full">
+            <h2 className="text-xl font-semibold mb-4 pl-0.5">Starting Zone</h2>
+            <div className="flex flex-row justify-between w-full">
               {lanes.map((lane, laneIndex) => (
-                <div key={`holding-lane-${laneIndex + 1}`}>
+                <div key={`holding-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
                   <div className="flex items-center mb-2">
                     <div className="text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded">
                       {laneDisplayNames["holding"][lane]}
@@ -815,7 +817,7 @@ export default function Home() {
                         {...provided.droppableProps}
                         style={{ 
                           backgroundColor: '#3037AB', // Same as the background color
-                          width: '200px',
+                          width: '100%',
                           height: '200px',
                           borderRadius: '0.5rem',
                           padding: '0.5rem',
@@ -882,10 +884,10 @@ export default function Home() {
           {/* Zone 1 */}
           {zoneVisibility["Zone 1"] && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-semibold mb-4">Pitch</h2>
-              <div className="flex flex-row justify-center gap-40 w-full">
+              <h2 className="text-xl font-semibold mb-4 pl-0.5">Pitch</h2>
+              <div className="flex flex-row justify-between w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 1-lane-${laneIndex + 1}`}>
+                  <div key={`Zone 1-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
@@ -910,7 +912,7 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: '#FF6464', // All Zone 1 lanes use the same color
-                            width: '200px',
+                            width: '100%',
                             height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
@@ -982,10 +984,10 @@ export default function Home() {
           {/* Zone 2 */}
           {zoneVisibility["Zone 2"] && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-semibold mb-4">Pace</h2>
-              <div className="flex flex-row justify-center gap-40 w-full">
+              <h2 className="text-xl font-semibold mb-4 pl-0.5">Pace</h2>
+              <div className="flex flex-row justify-between w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 2-lane-${laneIndex + 1}`}>
+                  <div key={`Zone 2-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
@@ -1010,7 +1012,7 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: '#067429', // All Zone 2 lanes use the same color
-                            width: '200px',
+                            width: '100%',
                             height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
@@ -1082,10 +1084,10 @@ export default function Home() {
           {/* Zone 3 */}
           {zoneVisibility["Zone 3"] && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-semibold mb-4">Jargon</h2>
-              <div className="flex flex-row justify-center gap-40 w-full">
+              <h2 className="text-xl font-semibold mb-4 pl-0.5">Jargon</h2>
+              <div className="flex flex-row justify-between w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 3-lane-${laneIndex + 1}`}>
+                  <div key={`Zone 3-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
@@ -1110,7 +1112,7 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: '#FFFFFF', // All Zone 3 lanes use the same color
-                            width: '200px',
+                            width: '100%',
                             height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
@@ -1182,10 +1184,10 @@ export default function Home() {
           {/* Zone 4 */}
           {zoneVisibility["Zone 4"] && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-semibold mb-4">Accent</h2>
-              <div className="flex flex-row justify-center gap-40 w-full">
+              <h2 className="text-xl font-semibold mb-4 pl-0.5">Accent</h2>
+              <div className="flex flex-row justify-between w-full">
                 {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 4-lane-${laneIndex + 1}`}>
+                  <div key={`Zone 4-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
                         ${isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
@@ -1210,7 +1212,7 @@ export default function Home() {
                           {...provided.droppableProps}
                           style={{ 
                             backgroundColor: '#595959', // All Zone 4 lanes use the same color
-                            width: '200px',
+                            width: '100%',
                             height: '200px',
                             borderRadius: '0.5rem',
                             padding: '0.5rem',
@@ -1282,7 +1284,7 @@ export default function Home() {
       </div>
 
       {/* Fixed right sidebar for master details section */}
-      <div className="w-[30%] bg-slate-700 p-6 overflow-y-auto border-l border-slate-600 shadow-inner side-pane" style={{ minWidth: "30%", maxWidth: "30%" }}>
+      <div className="w-[30%] bg-[#3730A3] p-6 overflow-y-auto border-l border-indigo-900 shadow-inner side-pane" style={{ minWidth: "30%", maxWidth: "30%" }}>
         <MasterDetailsSection 
           zoneMetadata={zoneMetadata}
           zoneCompletions={zoneCompletions}

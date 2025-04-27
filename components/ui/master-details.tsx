@@ -56,7 +56,7 @@ export function MasterDetailsSection({
       />
       
       {/* Voice details - three columns */}
-      <Card className="p-4 flex-1 bg-slate-800 border-slate-700 text-white">
+      <Card className="p-4 flex-1 bg-[#322b98] border-indigo-900 text-white">
         <h3 className="text-lg font-semibold mb-4">Voice Statistics</h3>
         
         <div className="flex flex-row justify-between gap-4">
@@ -72,7 +72,7 @@ export function MasterDetailsSection({
                 className={`rounded-lg p-3 flex-1 ${
                   isHighlighted ? 'ring-2 ring-blue-500' : ''
                 } ${
-                  voiceData ? 'bg-slate-700' : 'bg-slate-700/50'
+                  voiceData ? 'bg-indigo-900' : 'bg-indigo-900/50'
                 }`}
               >
                 <div className="flex justify-between items-center mb-3">
@@ -125,7 +125,7 @@ export function MasterDetailsSection({
                     {/* Spectrogram section */}
                     <div className="mt-2">
                       <p className="text-xs font-medium mb-1">Spectrogram</p>
-                      <div className="bg-slate-800 rounded-md p-1 flex justify-center">
+                      <div className="bg-indigo-950 rounded-md p-1 flex justify-center">
                         <img 
                           src={voiceData.metadata.spectrogram}
                           alt={`${voice} spectrogram`}
