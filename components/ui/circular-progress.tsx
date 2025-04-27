@@ -21,15 +21,13 @@ export function CircularProgress({
     
     // Create segment data for each zone
     Object.entries(zoneCompletions).forEach(([zone, count], zoneIndex) => {
-      // Special handling for Zone 4
-      const isZone4 = zone === "Zone 4";
+      // Special handling for Zone 4 is handled in the zone completion count calculation
+      // in app/page.tsx - the count will already reflect if Lane 1 has a card
       
       // Create sub-segments for each voice in the zone
       for (let i = 0; i < totalVoices; i++) {
-        // If this is Zone 4 and at least one voice is complete, show all as complete
-        const isCompleted = isZone4 
-          ? (count >= 1) // If any voice is in Zone 4, mark all as complete
-          : (i < count);  // Otherwise use normal logic
+        // Standard completion check - a segment is complete if its index is less than the count
+        const isCompleted = i < count;
 
         data.push({
           name: `${zone}-Voice-${i + 1}`,

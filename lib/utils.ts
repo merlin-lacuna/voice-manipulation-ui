@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { stickyLanesConfig, blockingLanesConfig } from "./config"
+import { stickyLanesConfig, blockingLanesConfig, uiConfig } from "./config"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -67,4 +67,20 @@ export function getZoneNumber(zoneName: string): number {
     return parseInt(match[1], 10)
   }
   return 0 // Default if pattern doesn't match
+}
+
+/**
+ * Check if sticky lane visual indicators should be shown
+ * @returns Boolean indicating if sticky lane indicators should be displayed
+ */
+export function showStickyIndicators(): boolean {
+  return uiConfig.showStickyLaneIndicators
+}
+
+/**
+ * Check if blocking lane visual indicators should be shown
+ * @returns Boolean indicating if blocking lane indicators should be displayed
+ */
+export function showBlockingIndicators(): boolean {
+  return uiConfig.showBlockingLaneIndicators
 }

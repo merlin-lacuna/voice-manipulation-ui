@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Card } from "@/components/ui/card"
 import { Loader2, CheckCircle, XCircle, Volume2 } from "lucide-react"
-import { cn, isLaneSticky, isLaneBlocking, getLaneNumber, getZoneNumber } from "@/lib/utils"
+import { cn, isLaneSticky, isLaneBlocking, getLaneNumber, getZoneNumber, showStickyIndicators, showBlockingIndicators } from "@/lib/utils"
 import { checkApiStatus, processVoice, playAudio, MetadataItem, ProcessResponse } from "@/lib/api-client"
 import { MasterDetailsSection } from "@/components/ui/master-details"
 import { ZoneSeparator } from "@/components/ui/zone-separator"
@@ -227,6 +227,7 @@ export default function Home() {
     );
     
     // If any card is in Zone 4 Lane 1, count all voices as complete for Zone 4
+    // Otherwise, use the normal historical count
     const zone4CompletionCount = isAnyCardInZone4Lane1 ? totalVoices : zone4HistoricalCount;
     
     // Update zone completion counts based on historical presence
@@ -867,13 +868,13 @@ export default function Home() {
                   <div key={`Zone 1-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 1", laneIndex + 1) ? 'border-2 border-red-500' : 
-                          isLaneBlocking("Zone 1", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
+                        ${isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 1", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
                         {laneDisplayNames["Zone 1"][lane]}
-                        {isLaneSticky("Zone 1", laneIndex + 1) && (
+                        {isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
-                        {isLaneBlocking("Zone 1", laneIndex + 1) && !isLaneSticky("Zone 1", laneIndex + 1) && (
+                        {isLaneBlocking("Zone 1", laneIndex + 1) && !isLaneSticky("Zone 1", laneIndex + 1) && showBlockingIndicators() && (
                           <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
@@ -900,12 +901,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 1" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 1" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 1", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
-                                       isLaneBlocking("Zone 1", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
-                            borderTop: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' : 
-                                       isLaneBlocking("Zone 1", laneIndex + 1) ? '3px dotted #f97316' : 'none',
-                            borderBottom: isLaneSticky("Zone 1", laneIndex + 1) ? '3px dashed #ef4444' :
-                                         isLaneBlocking("Zone 1", laneIndex + 1) ? '3px dotted #f97316' : 'none'
+                                       isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 1", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 1", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 1", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
+                                         isLaneBlocking("Zone 1", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -967,13 +968,13 @@ export default function Home() {
                   <div key={`Zone 2-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 2", laneIndex + 1) ? 'border-2 border-red-500' : 
-                          isLaneBlocking("Zone 2", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
+                        ${isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 2", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
                         {laneDisplayNames["Zone 2"][lane]}
-                        {isLaneSticky("Zone 2", laneIndex + 1) && (
+                        {isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
-                        {isLaneBlocking("Zone 2", laneIndex + 1) && !isLaneSticky("Zone 2", laneIndex + 1) && (
+                        {isLaneBlocking("Zone 2", laneIndex + 1) && !isLaneSticky("Zone 2", laneIndex + 1) && showBlockingIndicators() && (
                           <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
@@ -1000,12 +1001,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 2" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 2" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 2", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
-                                       isLaneBlocking("Zone 2", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
-                            borderTop: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' : 
-                                       isLaneBlocking("Zone 2", laneIndex + 1) ? '3px dotted #f97316' : 'none',
-                            borderBottom: isLaneSticky("Zone 2", laneIndex + 1) ? '3px dashed #ef4444' :
-                                          isLaneBlocking("Zone 2", laneIndex + 1) ? '3px dotted #f97316' : 'none'
+                                       isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 2", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 2", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 2", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 2", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -1067,13 +1068,13 @@ export default function Home() {
                   <div key={`Zone 3-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 3", laneIndex + 1) ? 'border-2 border-red-500' : 
-                          isLaneBlocking("Zone 3", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
+                        ${isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 3", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
                         {laneDisplayNames["Zone 3"][lane]}
-                        {isLaneSticky("Zone 3", laneIndex + 1) && (
+                        {isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
-                        {isLaneBlocking("Zone 3", laneIndex + 1) && !isLaneSticky("Zone 3", laneIndex + 1) && (
+                        {isLaneBlocking("Zone 3", laneIndex + 1) && !isLaneSticky("Zone 3", laneIndex + 1) && showBlockingIndicators() && (
                           <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
@@ -1100,12 +1101,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 3" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 3" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 3", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
-                                       isLaneBlocking("Zone 3", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
-                            borderTop: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' : 
-                                       isLaneBlocking("Zone 3", laneIndex + 1) ? '3px dotted #f97316' : 'none',
-                            borderBottom: isLaneSticky("Zone 3", laneIndex + 1) ? '3px dashed #ef4444' :
-                                          isLaneBlocking("Zone 3", laneIndex + 1) ? '3px dotted #f97316' : 'none'
+                                       isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 3", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 3", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 3", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 3", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {
@@ -1167,13 +1168,13 @@ export default function Home() {
                   <div key={`Zone 4-lane-${laneIndex + 1}`}>
                     <div className="flex items-center mb-2">
                       <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 4", laneIndex + 1) ? 'border-2 border-red-500' : 
-                          isLaneBlocking("Zone 4", laneIndex + 1) ? 'border-2 border-orange-500' : ''}`}>
+                        ${isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
+                          isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
                         {laneDisplayNames["Zone 4"][lane]}
-                        {isLaneSticky("Zone 4", laneIndex + 1) && (
+                        {isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() && (
                           <span className="ml-1 text-xs text-red-300">STICKY</span>
                         )}
-                        {isLaneBlocking("Zone 4", laneIndex + 1) && !isLaneSticky("Zone 4", laneIndex + 1) && (
+                        {isLaneBlocking("Zone 4", laneIndex + 1) && !isLaneSticky("Zone 4", laneIndex + 1) && showBlockingIndicators() && (
                           <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
                         )}
                       </div>
@@ -1200,12 +1201,12 @@ export default function Home() {
                             overflowX: 'auto',
                             boxShadow: glowingZone === "Zone 4" ? '0 0 0 4px #fcd34d' : 
                                        invalidZone === "Zone 4" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 4", laneIndex + 1) ? '0 0 0 3px #ef4444' : 
-                                       isLaneBlocking("Zone 4", laneIndex + 1) ? '0 0 0 2px #f97316' : 'none',
-                            borderTop: isLaneSticky("Zone 4", laneIndex + 1) ? '3px dashed #ef4444' : 
-                                       isLaneBlocking("Zone 4", laneIndex + 1) ? '3px dotted #f97316' : 'none',
-                            borderBottom: isLaneSticky("Zone 4", laneIndex + 1) ? '3px dashed #ef4444' :
-                                          isLaneBlocking("Zone 4", laneIndex + 1) ? '3px dotted #f97316' : 'none'
+                                       isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
+                                       isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
+                            borderTop: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
+                                       isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
+                            borderBottom: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
+                                          isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
                           }}
                         >
                           {cards.map((card, index) => {

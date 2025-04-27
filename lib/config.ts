@@ -1,4 +1,15 @@
 /**
+ * Configuration for UI display settings
+ */
+export const uiConfig = {
+  // Show visual indicators for sticky lanes (border and "STICKY" text)
+  showStickyLaneIndicators: false,
+  
+  // Show visual indicators for blocking lanes (border and "BLOCKING" text)
+  showBlockingLaneIndicators: false
+}
+
+/**
  * Configuration for sticky lanes
  * Once a card is placed in a sticky lane, it cannot be moved out.
  * 
