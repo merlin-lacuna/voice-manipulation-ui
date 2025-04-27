@@ -2,7 +2,11 @@
 
 // The base API URL can be configured via environment variable
 // When empty, we'll use relative URLs which work with the nginx proxy
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// For ngrok or production deployments, this should be empty to use relative URLs
+// For local development without Docker, use http://localhost:8000
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' && !window.location.port.includes('10000')
+  ? 'http://localhost:8000'
+  : '';
 
 export interface ProcessRequestParams {
   cardName: string;
@@ -73,19 +77,21 @@ export async function processVoice(params: ProcessRequestParams): Promise<Proces
 
     const data: ProcessResponse = await response.json();
     
-    // Convert relative URLs to absolute only if API_BASE_URL is set
-    if (data.audioFile && API_BASE_URL) {
-      data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+    // Handle URLs appropriately based on environment
+    if (data.audioFile) {
+      // If we're running local dev (not Docker), use absolute URLs
+      if (API_BASE_URL && !data.audioFile.startsWith('http')) {
+        data.audioFile = `${API_BASE_URL}${data.audioFile}`;
+      }
+      console.log('Using audio file:', data.audioFile);
     }
     
-    // Convert spectrogram URL to absolute if present and API_BASE_URL is set
-    if (data.metadata?.spectrogram && !data.metadata.spectrogram.startsWith('http') && API_BASE_URL) {
-      console.log('Original spectrogram URL:', data.metadata.spectrogram);
-      console.log('API base URL:', API_BASE_URL);
-      data.metadata.spectrogram = `${API_BASE_URL}${data.metadata.spectrogram}`;
-      console.log('FIXED! Converted spectrogram URL to:', data.metadata.spectrogram);
-    } else {
-      console.log('Using relative URL for:', data.metadata?.spectrogram);
+    if (data.metadata?.spectrogram && !data.metadata.spectrogram.startsWith('http')) {
+      // If we're running local dev (not Docker), use absolute URLs
+      if (API_BASE_URL) {
+        data.metadata.spectrogram = `${API_BASE_URL}${data.metadata.spectrogram}`;
+      }
+      console.log('Using spectrogram:', data.metadata.spectrogram);
     }
     
     return data;

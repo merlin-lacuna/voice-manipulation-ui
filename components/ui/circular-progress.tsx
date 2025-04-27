@@ -21,9 +21,16 @@ export function CircularProgress({
     
     // Create segment data for each zone
     Object.entries(zoneCompletions).forEach(([zone, count], zoneIndex) => {
+      // Special handling for Zone 4
+      const isZone4 = zone === "Zone 4";
+      
       // Create sub-segments for each voice in the zone
       for (let i = 0; i < totalVoices; i++) {
-        const isCompleted = i < count
+        // If this is Zone 4 and at least one voice is complete, show all as complete
+        const isCompleted = isZone4 
+          ? (count >= 1) // If any voice is in Zone 4, mark all as complete
+          : (i < count);  // Otherwise use normal logic
+
         data.push({
           name: `${zone}-Voice-${i + 1}`,
           value: 1, // Each segment has equal value

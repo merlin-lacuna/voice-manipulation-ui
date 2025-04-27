@@ -51,6 +51,9 @@ type ZoneMetadataType = {
 }
 
 export default function Home() {
+  // Count of total voices in the system
+  const totalVoices = 3;
+  
   // Initial cards in the holding zone (reduced to 3 voices)
   const initialCards: CardType[] = [
     { id: "voice-1", content: "Voice 1", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
@@ -192,14 +195,22 @@ export default function Home() {
     const zone3HistoricalCount = historicalZonePresence["Zone 3"].size;
     const zone4HistoricalCount = historicalZonePresence["Zone 4"].size;
     
+    // Check if any cards are in Zone 4 Lane 1 - special case completion
+    const isAnyCardInZone4Lane1 = cards.some(card => 
+      card.zone === "Zone 4" && card.lane === "Lane 1"
+    );
+    
+    // If any card is in Zone 4 Lane 1, count all voices as complete for Zone 4
+    const zone4CompletionCount = isAnyCardInZone4Lane1 ? totalVoices : zone4HistoricalCount;
+    
     // Update zone completion counts based on historical presence
     setZoneCompletions({
       "Zone 1": zone1HistoricalCount,
       "Zone 2": zone2HistoricalCount,
       "Zone 3": zone3HistoricalCount,
-      "Zone 4": zone4HistoricalCount
+      "Zone 4": zone4CompletionCount
     });
-  }, [historicalZonePresence]);
+  }, [historicalZonePresence, cards, totalVoices]);
   
   // Separate effect to update zone visibility based on zone completions and card positions
   useEffect(() => {
