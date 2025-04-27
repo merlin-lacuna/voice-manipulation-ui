@@ -824,7 +824,7 @@ export default function Home() {
           {/* Zone 1 */}
           {zoneVisibility["Zone 1"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Zone 1</h2>
+              <h2 className="text-xl font-semibold mb-4">Pitch</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 1-lane-${laneIndex + 1}`}>
@@ -924,7 +924,7 @@ export default function Home() {
           {/* Zone 2 */}
           {zoneVisibility["Zone 2"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Zone 2</h2>
+              <h2 className="text-xl font-semibold mb-4">Pace</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 2-lane-${laneIndex + 1}`}>
@@ -1024,7 +1024,7 @@ export default function Home() {
           {/* Zone 3 */}
           {zoneVisibility["Zone 3"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Zone 3</h2>
+              <h2 className="text-xl font-semibold mb-4">Jargon</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 3-lane-${laneIndex + 1}`}>
@@ -1124,7 +1124,7 @@ export default function Home() {
           {/* Zone 4 */}
           {zoneVisibility["Zone 4"] && (
             <>
-              <h2 className="text-xl font-semibold mb-4">Zone 4</h2>
+              <h2 className="text-xl font-semibold mb-4">Accent</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
                   <div key={`Zone 4-lane-${laneIndex + 1}`}>

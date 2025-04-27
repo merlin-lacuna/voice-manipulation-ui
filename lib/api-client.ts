@@ -1,6 +1,7 @@
 // API client for interacting with the voice manipulation backend
 
 // The base API URL can be configured via environment variable
+// When empty, we'll use relative URLs which work with the nginx proxy
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface ProcessRequestParams {
@@ -72,19 +73,19 @@ export async function processVoice(params: ProcessRequestParams): Promise<Proces
 
     const data: ProcessResponse = await response.json();
     
-    // Convert relative URLs to absolute
-    if (data.audioFile) {
+    // Convert relative URLs to absolute only if API_BASE_URL is set
+    if (data.audioFile && API_BASE_URL) {
       data.audioFile = `${API_BASE_URL}${data.audioFile}`;
     }
     
-    // Convert spectrogram URL to absolute if present
-    if (data.metadata?.spectrogram && !data.metadata.spectrogram.startsWith('http')) {
+    // Convert spectrogram URL to absolute if present and API_BASE_URL is set
+    if (data.metadata?.spectrogram && !data.metadata.spectrogram.startsWith('http') && API_BASE_URL) {
       console.log('Original spectrogram URL:', data.metadata.spectrogram);
       console.log('API base URL:', API_BASE_URL);
       data.metadata.spectrogram = `${API_BASE_URL}${data.metadata.spectrogram}`;
       console.log('FIXED! Converted spectrogram URL to:', data.metadata.spectrogram);
     } else {
-      console.log('Skipped URL conversion for:', data.metadata?.spectrogram);
+      console.log('Using relative URL for:', data.metadata?.spectrogram);
     }
     
     return data;

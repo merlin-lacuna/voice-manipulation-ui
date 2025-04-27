@@ -1,0 +1,95 @@
+# Stage 1: Base image with common dependencies
+FROM python:3.11-slim as python-base
+
+# Install system dependencies required for audio processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libsndfile1 \
+    ffmpeg \
+    curl \
+    nginx \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get update && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up Python virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Setup API
+WORKDIR /app/api
+COPY api/requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy API files
+COPY api /app/api
+# Create necessary directories
+RUN mkdir -p /app/api/voices /app/api/public /app/api/spectrograms
+
+# Copy voice files directly to make sure they're available
+COPY voices/* /app/api/voices/
+
+# Stage 2: Node.js setup for frontend
+FROM node:20-alpine AS node-builder
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set up workspace for frontend build
+WORKDIR /app/frontend
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+
+# Copy frontend source
+COPY . .
+# Build the frontend
+RUN pnpm build
+
+# Stage 3: Final image combining both services
+FROM python-base AS final
+
+# Copy the built frontend from the node-builder stage
+COPY --from=node-builder /app/frontend/.next/standalone /app/frontend
+COPY --from=node-builder /app/frontend/.next/static /app/frontend/.next/static
+COPY --from=node-builder /app/frontend/public /app/frontend/public
+
+# Set up Nginx proxy
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+# Start FastAPI backend\n\
+cd /app/api\n\
+echo "Starting voice manipulation API..."\n\
+echo "Setting up symlinks for API paths..."\n\
+# Create symlinks for the API to find directories\n\
+ln -sf /app/api/voices ./voices\n\
+ln -sf /app/api/stats ./stats\n\
+ln -sf /app/api/spectrograms ./spectrograms\n\
+mkdir -p ./spectrograms\n\
+mkdir -p ./stats\n\
+python check_voices.py\n\
+uvicorn main:app --host 0.0.0.0 --port 8000 & \n\
+\n\
+# Start Next.js frontend\n\
+cd /app/frontend\n\
+# Explicitly set host to 0.0.0.0 to bind to all interfaces\n\
+PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 node server.js & \n\
+\n\
+# Start Nginx\n\
+nginx -g "daemon off;"\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Create a volume for voices
+VOLUME /app/api/voices
+
+# Expose the Nginx port
+EXPOSE 10000
+
+# Start all services
+CMD ["/app/start.sh"]
