@@ -54,11 +54,11 @@ export default function Home() {
   // Count of total voices in the system
   const totalVoices = 3;
   
-  // Initial cards in the holding zone (reduced to 3 voices)
+  // Initial cards in the holding zone (one voice per lane)
   const initialCards: CardType[] = [
     { id: "voice-1", content: "Voice 1", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
-    { id: "voice-2", content: "Voice 2", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
-    { id: "voice-3", content: "Voice 3", zone: "holding", lane: "Lane 1", asFarAsCanGo: false },
+    { id: "voice-2", content: "Voice 2", zone: "holding", lane: "Lane 2", asFarAsCanGo: false },
+    { id: "voice-3", content: "Voice 3", zone: "holding", lane: "Lane 3", asFarAsCanGo: false },
   ]
 
   const [cards, setCards] = useState<CardType[]>(initialCards)
@@ -133,25 +133,30 @@ export default function Home() {
   
   // Display names for lanes (cosmetic only - customize these)
   const laneDisplayNames = {
+    "holding": {
+      "Lane 1": "Lane 1",
+      "Lane 2": "Lane 2", 
+      "Lane 3": "Lane 3"
+    },
     "Zone 1": {
       "Lane 1": "High",
-      "Lane 2": "Medium", 
+      "Lane 2": "Trembling", 
       "Lane 3": "Low"
     },
     "Zone 2": {
       "Lane 1": "Fast",
-      "Lane 2": "Moderate", 
-      "Lane 3": "Slow"
+      "Lane 2": "Slow", 
+      "Lane 3": "Hesitant"
     },
     "Zone 3": {
-      "Lane 1": "Technical",
-      "Lane 2": "Standard", 
-      "Lane 3": "Simple"
+      "Lane 1": "Corporate",
+      "Lane 2": "Artspeak", 
+      "Lane 3": "Gen-Z"
     },
     "Zone 4": {
-      "Lane 1": "Neutral",
-      "Lane 2": "Regional", 
-      "Lane 3": "Strong"
+      "Lane 1": "American",
+      "Lane 2": "Spanish", 
+      "Lane 3": "Albanian"
     }
   }
 
@@ -788,71 +793,84 @@ export default function Home() {
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Holding Zone */}
           <div className="mb-4">
-            <h2 className="text-xl font-semibold mb-2">Holding Zone</h2>
-            <div className="w-full">
-              <Droppable key="holding-lane" droppableId="holding-1" direction="horizontal">
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    style={{
-                      backgroundColor: '#e2e8f0',
-                      width: '100%',
-                      height: '150px',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '1rem',
-                      overflowX: 'auto',
-                      border: '2px dashed #64748b'
-                    }}
-                  >
-                    {cards.map((card, index) => {
-                      if (card.zone === "holding") {
-                        return (
-                          <Draggable key={card.id} draggableId={card.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="mx-2"
-                                style={{
-                                  ...provided.draggableProps.style,
-                                }}
-                                onClick={() => handleCardClick(card)}
-                              >
-                                <Card className={cn(
-                                  "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-24 h-32 text-gray-800 flex flex-col justify-between",
-                                  playingAudio === card.id && "ring-2 ring-blue-500"
-                                )}>
-                                  <div className="flex flex-col items-center justify-center">
-                                    <p className="font-medium text-center">{card.content}</p>
-                                    <Volume2 className="h-4 w-4 text-blue-500 mt-2" />
-                                  </div>
-                                  <p className="text-xs text-gray-700 text-center">
-                                    Click to play
-                                  </p>
-                                  {playingAudio === card.id && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                                    </div>
-                                  )}
-                                </Card>
-                              </div>
-                            )}
-                          </Draggable>
-                        )
-                      }
-                      return null
-                    })}
-                    {provided.placeholder}
+            <h2 className="text-xl font-semibold mb-4">Holding Zone</h2>
+            <div className="flex flex-row justify-center gap-40 w-full">
+              {lanes.map((lane, laneIndex) => (
+                <div key={`holding-lane-${laneIndex + 1}`}>
+                  <div className="flex items-center mb-2">
+                    <div className="text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded">
+                      {laneDisplayNames["holding"][lane]}
+                    </div>
                   </div>
-                )}
-              </Droppable>
+                  <Droppable 
+                    key={`holding-${laneIndex + 1}`} 
+                    droppableId={`holding-${laneIndex + 1}`} 
+                    direction="horizontal"
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        style={{ 
+                          backgroundColor: '#3037AB', // Same as the background color
+                          width: '200px',
+                          height: '200px',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem',
+                          display: 'flex',
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflowX: 'auto',
+                          boxShadow: glowingZone === "holding" ? '0 0 0 4px #fcd34d' : 
+                                     invalidZone === "holding" ? '0 0 0 4px #ef4444' : 'none'
+                        }}
+                      >
+                        {cards.map((card, index) => {
+                          if (card.zone === "holding" && card.lane === lane) {
+                            return (
+                              <Draggable key={card.id} draggableId={card.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className="mx-2"
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                    }}
+                                    onClick={() => handleCardClick(card)}
+                                  >
+                                    <Card className={cn(
+                                      "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-24 h-32 text-gray-800 flex flex-col justify-between",
+                                      playingAudio === card.id && "ring-2 ring-blue-500"
+                                    )}>
+                                      <div className="flex flex-col items-center justify-center">
+                                        <p className="font-medium text-center">{card.content}</p>
+                                        <Volume2 className="h-4 w-4 text-blue-500 mt-2" />
+                                      </div>
+                                      <p className="text-xs text-gray-700 text-center">
+                                        Click to play
+                                      </p>
+                                      {playingAudio === card.id && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                          <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                        </div>
+                                      )}
+                                    </Card>
+                                  </div>
+                                )}
+                              </Draggable>
+                            )
+                          }
+                          return null
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              ))}
             </div>
           </div>
           
@@ -889,7 +907,7 @@ export default function Home() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}
                           style={{ 
-                            backgroundColor: laneIndex === 0 ? '#fef3c7' : laneIndex === 1 ? '#fcd34d' : '#f59e0b',
+                            backgroundColor: '#FF6464', // All Zone 1 lanes use the same color
                             width: '200px',
                             height: '200px',
                             borderRadius: '0.5rem',
@@ -989,7 +1007,7 @@ export default function Home() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}
                           style={{ 
-                            backgroundColor: laneIndex === 0 ? '#dcfce7' : laneIndex === 1 ? '#86efac' : '#22c55e',
+                            backgroundColor: '#067429', // All Zone 2 lanes use the same color
                             width: '200px',
                             height: '200px',
                             borderRadius: '0.5rem',
@@ -1089,7 +1107,7 @@ export default function Home() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}
                           style={{ 
-                            backgroundColor: laneIndex === 0 ? '#dbeafe' : laneIndex === 1 ? '#93c5fd' : '#3b82f6',
+                            backgroundColor: '#FFFFFF', // All Zone 3 lanes use the same color
                             width: '200px',
                             height: '200px',
                             borderRadius: '0.5rem',
@@ -1189,7 +1207,7 @@ export default function Home() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}
                           style={{ 
-                            backgroundColor: laneIndex === 0 ? '#f9a8d4' : laneIndex === 1 ? '#ec4899' : '#be185d',
+                            backgroundColor: '#595959', // All Zone 4 lanes use the same color
                             width: '200px',
                             height: '200px',
                             borderRadius: '0.5rem',
