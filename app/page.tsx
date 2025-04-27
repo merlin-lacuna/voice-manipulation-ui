@@ -842,7 +842,7 @@ export default function Home() {
                                     onClick={() => handleCardClick(card)}
                                   >
                                     <Card className={cn(
-                                      "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-24 h-32 text-gray-800 flex flex-col justify-between",
+                                      "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-32 h-32 text-gray-800 flex flex-col justify-between",
                                       playingAudio === card.id && "ring-2 ring-blue-500"
                                     )}>
                                       <div className="flex flex-col items-center justify-center">
@@ -944,7 +944,7 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-amber-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
+                                          "p-3 bg-amber-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
@@ -1044,7 +1044,7 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-green-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
+                                          "p-3 bg-green-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
@@ -1144,7 +1144,7 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-blue-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
+                                          "p-3 bg-blue-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
@@ -1244,7 +1244,7 @@ export default function Home() {
                                     >
                                       <Card
                                         className={cn(
-                                          "p-3 bg-pink-300 shadow-md relative w-24 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
+                                          "p-3 bg-pink-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
                                           selectedVoiceCard === card.content && "ring-2 ring-blue-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
