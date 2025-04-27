@@ -60,17 +60,17 @@ export function CircularProgress({
   const totalPossible = Object.keys(zoneCompletions).length * totalVoices
   
   return (
-    <Card className="p-6 flex flex-col items-center bg-slate-800 border-slate-700 text-white">
-      <div className="text-lg font-medium mb-2">Progress</div>
-      <div className="h-64 w-64 relative">
+    <Card className="p-2.5 flex flex-col items-center bg-slate-800 border-slate-700 text-white">
+      <div className="text-lg font-medium mb-1">Progress</div>
+      <div className="h-56 w-56 relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={90}
+              innerRadius={55}
+              outerRadius={80}
               startAngle={90}
               endAngle={450}
               paddingAngle={2}
@@ -93,9 +93,9 @@ export function CircularProgress({
         </ResponsiveContainer>
         
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center bg-slate-900 rounded-full w-28 h-28 flex flex-col items-center justify-center">
-            <div className="text-3xl font-bold">{totalComplete}/{totalPossible}</div>
-            <div className="text-sm text-slate-400">Voices</div>
+          <div className="text-center bg-slate-900 rounded-full w-24 h-24 flex flex-col items-center justify-center">
+            <div className="text-2xl font-bold">{totalComplete}/{totalPossible}</div>
+            <div className="text-xs text-slate-400">Voices</div>
           </div>
         </div>
       </div>

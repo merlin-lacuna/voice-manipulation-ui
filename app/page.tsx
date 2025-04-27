@@ -793,7 +793,7 @@ export default function Home() {
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Holding Zone */}
           <div className="mb-4">
-            <h2 className="text-xl font-semibold mb-4">Holding Zone</h2>
+            <h2 className="text-xl font-semibold mb-4">Starting Zone</h2>
             <div className="flex flex-row justify-center gap-40 w-full">
               {lanes.map((lane, laneIndex) => (
                 <div key={`holding-lane-${laneIndex + 1}`}>
