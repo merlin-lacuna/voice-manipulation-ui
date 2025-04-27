@@ -752,7 +752,7 @@ export default function Home() {
       
       {/* Main scrollable content area - fixed at 70% with minimum width */}
       <div className="w-[70%] overflow-y-auto p-4 main-pane" style={{ minWidth: "70%", maxWidth: "70%" }}>
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold">VOCAL BOX BIAS</h1>
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium">API Status:</span>
@@ -762,15 +762,17 @@ export default function Home() {
           </div>
         </div>
         
-        <p className="text-lg mb-8">
-          Pick up the voices and place them in one of the boxes
-        </p>
+        <div className="max-w-4xl mx-auto">
+          <p className="text-lg mb-8">
+            Pick up the voices and place them in one of the boxes
+          </p>
 
-        {apiMessage && (
-          <div className="mb-6 p-4 bg-indigo-700 rounded-lg border border-indigo-600">
-            <p>{apiMessage}</p>
-          </div>
-        )}
+          {apiMessage && (
+            <div className="mb-6 p-4 bg-indigo-700 rounded-lg border border-indigo-600">
+              <p>{apiMessage}</p>
+            </div>
+          )}
+        </div>
 
         {/* Ghost Card for Animation */}
         {ghostCard && (
@@ -792,7 +794,7 @@ export default function Home() {
 
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Holding Zone */}
-          <div className="mb-4">
+          <div className="mb-4 max-w-4xl mx-auto">
             <h2 className="text-xl font-semibold mb-4">Starting Zone</h2>
             <div className="flex flex-row justify-center gap-40 w-full">
               {lanes.map((lane, laneIndex) => (
@@ -879,7 +881,7 @@ export default function Home() {
 
           {/* Zone 1 */}
           {zoneVisibility["Zone 1"] && (
-            <>
+            <div className="max-w-4xl mx-auto">
               <h2 className="text-xl font-semibold mb-4">Pitch</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
@@ -971,7 +973,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Wall between Zone 1 and Zone 2 */}
@@ -979,7 +981,7 @@ export default function Home() {
 
           {/* Zone 2 */}
           {zoneVisibility["Zone 2"] && (
-            <>
+            <div className="max-w-4xl mx-auto">
               <h2 className="text-xl font-semibold mb-4">Pace</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
@@ -1071,7 +1073,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Wall between Zone 2 and Zone 3 */}
@@ -1079,7 +1081,7 @@ export default function Home() {
 
           {/* Zone 3 */}
           {zoneVisibility["Zone 3"] && (
-            <>
+            <div className="max-w-4xl mx-auto">
               <h2 className="text-xl font-semibold mb-4">Jargon</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
@@ -1171,7 +1173,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
           
           {/* Wall between Zone 3 and Zone 4 */}
@@ -1179,7 +1181,7 @@ export default function Home() {
 
           {/* Zone 4 */}
           {zoneVisibility["Zone 4"] && (
-            <>
+            <div className="max-w-4xl mx-auto">
               <h2 className="text-xl font-semibold mb-4">Accent</h2>
               <div className="flex flex-row justify-center gap-40 w-full">
                 {lanes.map((lane, laneIndex) => (
@@ -1271,11 +1273,11 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Additional padding at the bottom for scrolling */}
-          <div className="h-24"></div>
+          <div className="h-24 max-w-4xl mx-auto"></div>
         </DragDropContext>
       </div>
 

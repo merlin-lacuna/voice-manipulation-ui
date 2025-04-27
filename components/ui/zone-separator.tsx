@@ -11,7 +11,7 @@ export function ZoneSeparator({ className, color }: ZoneSeparatorProps & { color
   // All walls now use a single color: #B0B0B0
   
   return (
-    <div className="relative w-full my-8">
+    <div className="relative max-w-4xl mx-auto my-8">
       {/* Wall with standard gray color */}
       <div 
         className="w-full h-10 rounded-md shadow-md"
