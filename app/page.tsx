@@ -112,6 +112,8 @@ export default function Home() {
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
   const [errorDialogMessage, setErrorDialogMessage] = useState<string>("")
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false)
+  const [showResetDialog, setShowResetDialog] = useState<boolean>(false)
+  const [resetCountdown, setResetCountdown] = useState<number>(10)
   const [showStartDialog, setShowStartDialog] = useState<boolean>(true) // Show start dialog by default
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false)
   
@@ -227,6 +229,30 @@ export default function Home() {
     // Only reveal next zone if all cards have reached as far as they can go
     return areAllCardsAsFarAsTheyCanGo();
   };
+  
+  // Reset timer effect
+  useEffect(() => {
+    if (showResetDialog) {
+      // Start countdown from 10
+      setResetCountdown(10);
+      
+      // Set up interval to decrement the counter
+      const interval = setInterval(() => {
+        setResetCountdown(prev => {
+          // When we reach 0, reload the page
+          if (prev <= 1) {
+            clearInterval(interval);
+            window.location.reload();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      // Clean up interval on unmount
+      return () => clearInterval(interval);
+    }
+  }, [showResetDialog]);
   
   // Global mouse move listener to detect when mouse leaves a card
   useEffect(() => {
@@ -943,7 +969,13 @@ export default function Home() {
       </AlertDialog>
       
       {/* Success Dialog */}
-      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+      <AlertDialog open={showSuccessDialog} onOpenChange={(open) => {
+        setShowSuccessDialog(open);
+        // When the success dialog is closed, show the reset dialog
+        if (!open) {
+          setShowResetDialog(true);
+        }
+      }}>
         <AlertDialogContent className="bg-green-800 text-white border-green-600">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white text-xl">Mission accomplished</AlertDialogTitle>
@@ -959,6 +991,25 @@ export default function Home() {
               Close
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Reset Dialog with countdown */}
+      <AlertDialog open={showResetDialog} onOpenChange={() => {/* Do nothing - user can't close this */}}>
+        <AlertDialogContent className="bg-blue-900 text-white border-blue-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">Game Complete</AlertDialogTitle>
+            {/* Use a div instead of AlertDialogDescription to avoid p > div nesting issue */}
+            <div className="text-white/90 text-center py-4">
+              <p className="text-2xl mb-3">Resetting the game in {resetCountdown} seconds</p>
+              <div className="w-full bg-blue-800 rounded-full h-4 mb-4">
+                <div 
+                  className="bg-green-500 h-4 rounded-full transition-all duration-1000 ease-linear" 
+                  style={{ width: `${(resetCountdown / 10) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </AlertDialogHeader>
         </AlertDialogContent>
       </AlertDialog>
       
