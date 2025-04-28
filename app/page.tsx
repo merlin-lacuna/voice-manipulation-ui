@@ -104,12 +104,42 @@ export default function Home() {
   // State to track which card is being hovered over
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   
+  // Single audio element for the entire application
+  // Using a single audio element that we reuse is more reliable
+  const audioElement = useRef<HTMLAudioElement | null>(null)
+  
   // State for dialogs
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
   const [errorDialogMessage, setErrorDialogMessage] = useState<string>("")
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false)
   const [showStartDialog, setShowStartDialog] = useState<boolean>(true) // Show start dialog by default
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false)
+  
+  // Initialize the audio element after user interaction
+  const initAudio = useCallback(() => {
+    // Create a single audio element that we'll reuse
+    if (!audioElement.current) {
+      audioElement.current = new Audio();
+      audioElement.current.autoplay = false; // Don't autoplay on src change
+      
+      // Set up event listeners
+      audioElement.current.addEventListener('ended', () => {
+        console.log('Audio playback completed');
+        setPlayingAudio(null);
+      });
+      
+      audioElement.current.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e);
+        setPlayingAudio(null);
+      });
+      
+      // We'll create and manage the listener in a separate effect
+      
+      console.log('Audio element and listeners initialized');
+    }
+    
+    setAudioEnabled(true);
+  }, [])
 
   // Check API status on initial load and periodically
   useEffect(() => {
@@ -197,6 +227,45 @@ export default function Home() {
     // Only reveal next zone if all cards have reached as far as they can go
     return areAllCardsAsFarAsTheyCanGo();
   };
+  
+  // Global mouse move listener to detect when mouse leaves a card
+  useEffect(() => {
+    // Only set up if audio is enabled
+    if (!audioEnabled) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      // If we have a hovered card and audio is playing
+      if (hoveredCard && playingAudio && hoveredCard === playingAudio) {
+        // Get the card element
+        const cardElement = document.querySelector(`[data-rbd-draggable-id="${hoveredCard}"]`);
+        if (!cardElement) return;
+        
+        // Get card position
+        const rect = cardElement.getBoundingClientRect();
+        
+        // Check if mouse is outside the card
+        const isOutside = 
+          e.clientX < rect.left || 
+          e.clientX > rect.right || 
+          e.clientY < rect.top || 
+          e.clientY > rect.bottom;
+        
+        // If mouse is outside the card and audio is playing
+        if (isOutside && audioElement.current) {
+          console.log('Mouse outside card bounds, stopping audio', rect, e.clientX, e.clientY);
+          audioElement.current.pause();
+          setPlayingAudio(null);
+          setHoveredCard(null);
+        }
+      }
+    };
+    
+    // Add the event listener
+    document.addEventListener('mousemove', handleMouseMove);
+    
+    // Remove on cleanup
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, [audioEnabled, hoveredCard, playingAudio]);
   
   // Effect to update historical zone presence based on cards
   useEffect(() => {
@@ -389,18 +458,17 @@ export default function Home() {
     // Reset hover state when dragging starts
     setHoveredCard(null);
     setPlayingAudio(null);
+    
+    // Stop any currently playing audio
+    if (audioElement.current) {
+      audioElement.current.pause();
+      setPlayingAudio(null);
+    }
   }
   
-  // Handle mouse enter (hover) on a card
-  const handleCardHover = async (card: CardType) => {
-    // Don't do anything if we're already hovering over this card
-    if (hoveredCard === card.id) return;
-    
-    // Update hover state
-    setHoveredCard(card.id);
-    
-    // Only proceed with audio if it's been enabled by user interaction
-    if (!audioEnabled) return;
+  // Create a DIRECT approach with no state dependencies
+  const playAudioForCard = async (card: CardType) => {
+    if (!audioEnabled || !audioElement.current) return;
     
     // Only play audio for cards that are in a zone
     if (!card.zone) return;
@@ -408,51 +476,74 @@ export default function Home() {
     // Skip if a card is still processing
     if (processingCard.id === card.id) return;
     
-    // Use the EXACT same code pattern as the original implementation
-    // which was working for drag and drop
-    
-    setPlayingAudio(card.id);
     setApiMessage(`Loading ${card.content} audio...`);
     
     try {
-      // Call API to get original audio - use the same code as original handleCardClick
+      // Call API to get audio URL
       const response = await processVoice({
         cardName: card.content,
         zoneName: card.zone,
         laneName: card.lane
       });
       
-      console.log("Got API response for hover audio:", response);
-      
       // Check if the API call was successful
       if (response.status === "error") {
         throw new Error(response.message || "API returned an error");
       }
       
-      // Play the audio if available - using the original pattern
+      // Play the audio if available
       if (response.audioFile) {
+        setApiMessage(`Playing ${card.content}...`);
+        
+        // Direct playback - no async/await that could cause race conditions
         try {
-          setApiMessage(`Playing ${card.content}...`);
+          // Pause any existing audio
+          audioElement.current.pause();
           
-          // Using the original approach with Audio object
-          await playAudio(response.audioFile);
-          setApiMessage(`Finished playing ${card.content}`);
+          // Set new source and play
+          audioElement.current.src = response.audioFile;
+          audioElement.current.load();
+          audioElement.current.play();
+          
+          // Update state AFTER setting up audio
+          setPlayingAudio(card.id);
+          
+          console.log('Playing audio from URL:', response.audioFile);
         } catch (playError) {
-          console.error("Playback error:", playError);
-          setApiMessage(`Error during playback: ${playError instanceof Error ? playError.message : String(playError)}`);
+          console.error('Playback error:', playError);
         }
       } else {
         setApiMessage(`No audio file returned for ${card.content}`);
       }
     } catch (error) {
-      console.error("Hover playback error:", error);
+      console.error("Audio API error:", error);
       setApiMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
+  
+  // Handle mouse enter (hover) on a card - extremely simple now
+  const handleCardHover = (card: CardType) => {
+    // Don't do anything if we're already hovering over this card
+    if (hoveredCard === card.id) return;
+    
+    // Update hover state
+    setHoveredCard(card.id);
+    
+    // Play audio for this card if enabled
+    if (audioEnabled) {
+      playAudioForCard(card);
+    }
+  };
 
-  // Handle mouse leave
+  // Handle mouse leave - extremely simple now
   const handleCardLeave = () => {
     setHoveredCard(null);
+    
+    // Pause audio when leaving a card
+    if (audioElement.current) {
+      audioElement.current.pause();
+    }
+    
     setPlayingAudio(null);
   };
 
@@ -679,19 +770,44 @@ export default function Home() {
           }
           
           // Play audio if available and enabled
-          if (response.audioFile && audioEnabled) {
-            // Play audio on drag completion only if audio is enabled
-            playAudio(response.audioFile);
+          if (response.audioFile && audioEnabled && audioElement.current) {
+            // Play audio on drag completion
+            audioElement.current.src = response.audioFile;
+            audioElement.current.load();
+            audioElement.current.play();
+            setPlayingAudio(card.id);
           }
           
           // Clear processing state after API call completes
           setProcessingCard({ id: null, zone: null, lane: null })
           
-          // If mouse is still hovering over this card after processing, play the audio
-          if (hoveredCard === card.id && response.audioFile && audioEnabled) {
-            // Only play if audio is enabled
-            playAudio(response.audioFile);
-          }
+          // After processing, check if the mouse is really still over the card
+          // We need to manually check because the drag event may not trigger mouse events correctly
+          setTimeout(() => {
+            // Get the card element
+            const cardElement = document.querySelector(`[data-rbd-draggable-id="${card.id}"]`);
+            if (!cardElement) return;
+            
+            // Get card position
+            const rect = cardElement.getBoundingClientRect();
+            
+            // Check if the mouse is really over the card
+            const isMouseOverCard = 
+              mousePosition.x >= rect.left && 
+              mousePosition.x <= rect.right && 
+              mousePosition.y >= rect.top && 
+              mousePosition.y <= rect.bottom;
+            
+            console.log('Mouse position check:', mousePosition.x, mousePosition.y, 'Card rect:', rect, 'Is over:', isMouseOverCard);
+            
+            // If mouse is not over the card, stop the audio
+            if (!isMouseOverCard && playingAudio === card.id && audioElement.current) {
+              console.log('Mouse not over card after drop, stopping audio');
+              audioElement.current.pause();
+              setPlayingAudio(null);
+              setHoveredCard(null);
+            }
+          }, 100); // Small delay to ensure DOM is updated
         }).catch((error) => {
           // Handle API errors
           setApiMessage(`Error: ${error.message}`)
@@ -742,11 +858,7 @@ export default function Home() {
               className="bg-green-600 hover:bg-green-700 text-white"
               onClick={() => {
                 setShowStartDialog(false);
-                setAudioEnabled(true);
-                
-                // Create an empty audio context to satisfy the user interaction requirement
-                const silentAudio = new Audio();
-                silentAudio.play().catch(e => console.log("Silent audio failed, but user interaction registered"));
+                initAudio(); // Initialize audio system on user interaction
               }}
             >
               Start Experience

@@ -113,14 +113,22 @@ export async function processVoice(params: ProcessRequestParams): Promise<Proces
 /**
  * Play an audio file
  */
-export async function playAudio(url: string): Promise<void> {
+export async function playAudio(url: string, audioRef?: React.MutableRefObject<HTMLAudioElement | null>): Promise<void> {
   console.log('Playing audio from URL:', url);
   
   return new Promise((resolve, reject) => {
+    let isPlayingInterrupted = false;
+    
+    // Create a new audio element before stopping the current one
+    // to avoid interrupting the play request
     const audio = new Audio(url);
     
+    // Setup event handlers before we try to play
     audio.onended = () => {
       console.log('Audio playback completed');
+      if (!isPlayingInterrupted && audioRef && audioRef.current === audio) {
+        audioRef.current = null;
+      }
       resolve();
     };
     
@@ -132,13 +140,48 @@ export async function playAudio(url: string): Promise<void> {
       console.error('Audio error:', error);
       console.error('Error code:', audio.error?.code);
       console.error('Error message:', audio.error?.message);
+      if (audioRef && audioRef.current === audio) {
+        audioRef.current = null;
+      }
       reject(new Error(`Failed to play audio: ${audio.error?.message || 'Unknown error'}`));
     };
     
+    // Function to safely stop previous audio
+    const stopPreviousAudio = () => {
+      if (audioRef?.current && audioRef.current !== audio) {
+        try {
+          const previousAudio = audioRef.current;
+          // Clear the reference before pausing to avoid race conditions
+          audioRef.current = null;
+          previousAudio.pause();
+        } catch (e) {
+          console.warn("Error stopping previous audio:", e);
+        }
+      }
+    };
+    
+    // First let's try to load the audio data
+    audio.load();
+    
+    // Now stop any currently playing audio
+    stopPreviousAudio();
+    
+    // Store reference to new audio element
+    if (audioRef) {
+      audioRef.current = audio;
+    }
+    
+    // Now start playing the new audio
     audio.play()
-      .then(() => console.log('Audio playback started'))
+      .then(() => {
+        console.log('Audio playback started');
+      })
       .catch(error => {
+        isPlayingInterrupted = true;
         console.error('Failed to start audio playback:', error);
+        if (audioRef && audioRef.current === audio) {
+          audioRef.current = null;
+        }
         reject(error);
       });
   });
