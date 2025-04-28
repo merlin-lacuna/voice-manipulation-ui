@@ -357,8 +357,34 @@ export default function Home() {
     // Check if all cards have reached as far as they can go
     const allCardsAtMaxPosition = cards.every(card => card.asFarAsCanGo === true);
     
-    // Update zone visibility based on whether all cards have reached their furthest possible position
-    if (zone1HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 2"]) {
+    // SPECIAL RULE FOR ZONE 1: Count how many cards are currently in Zone 1
+    const cardsInZone1 = cards.filter(card => card.zone === "Zone 1").length;
+    const allLanesInZone1Occupied = cardsInZone1 === lanes.length; // If all lanes are filled
+    
+    // For Zone 1 specifically, reveal Zone 2 when all lanes are occupied, regardless of asFarAsCanGo
+    if (!zoneVisibility["Zone 2"] && allLanesInZone1Occupied) {
+      console.log("Special Zone 1 rule: All lanes occupied, revealing Zone 2");
+      setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
+      
+      // Reset asFarAsCanGo for cards that aren't in sticky lanes
+      setCards(prevCards => prevCards.map(card => {
+        // Skip cards in sticky lanes
+        if (card.zone && card.lane) {
+          const laneNumber = getLaneNumber(card.lane);
+          if (isLaneSticky(card.zone, laneNumber)) {
+            return card; // Keep sticky lane cards as asFarAsCanGo=true
+          }
+        }
+        // Reset for non-sticky cards if they're not in the last zone
+        if (card.zone !== "Zone 3" && card.zone !== "Zone 4") {
+          return { ...card, asFarAsCanGo: false };
+        }
+        return card;
+      }));
+    }
+    // Use the normal rule for Zone 1 as a fallback
+    else if (zone1HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 2"]) {
+      console.log("Standard rule: All cards at max position, revealing Zone 2");
       setZoneVisibility(prev => ({ ...prev, "Zone 2": true }));
       
       // Reset asFarAsCanGo for cards that aren't in sticky lanes
@@ -378,6 +404,7 @@ export default function Home() {
       }));
     }
     
+    // Standard rules for Zones 2 and 3
     if (zone2HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 3"]) {
       setZoneVisibility(prev => ({ ...prev, "Zone 3": true }));
       
@@ -401,7 +428,7 @@ export default function Home() {
     if (zone3HistoricalCount > 0 && allCardsAtMaxPosition && !zoneVisibility["Zone 4"]) {
       setZoneVisibility(prev => ({ ...prev, "Zone 4": true }));
     }
-  }, [cards, zoneVisibility, historicalZonePresence]);
+  }, [cards, zoneVisibility, historicalZonePresence, lanes.length]);
 
   const isValidMove = (
     sourceZone: string, 
