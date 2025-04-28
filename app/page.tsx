@@ -253,7 +253,11 @@ export default function Home() {
         // If mouse is outside the card and audio is playing
         if (isOutside && audioElement.current) {
           console.log('Mouse outside card bounds, stopping audio', rect, e.clientX, e.clientY);
-          audioElement.current.pause();
+          try {
+            audioElement.current.pause();
+          } catch (e) {
+            console.log("Pause error on mouse leave (suppressed):", e);
+          }
           setPlayingAudio(null);
           setHoveredCard(null);
         }
@@ -461,7 +465,11 @@ export default function Home() {
     
     // Stop any currently playing audio
     if (audioElement.current) {
-      audioElement.current.pause();
+      try {
+        audioElement.current.pause();
+      } catch (e) {
+        console.log("Pause error in handleDragStart (suppressed):", e);
+      }
       setPlayingAudio(null);
     }
   }
@@ -495,29 +503,55 @@ export default function Home() {
       if (response.audioFile) {
         setApiMessage(`Playing ${card.content}...`);
         
-        // Direct playback - no async/await that could cause race conditions
-        try {
-          // Pause any existing audio
-          audioElement.current.pause();
-          
-          // Set new source and play
-          audioElement.current.src = response.audioFile;
-          audioElement.current.load();
-          audioElement.current.play();
-          
-          // Update state AFTER setting up audio
-          setPlayingAudio(card.id);
-          
-          console.log('Playing audio from URL:', response.audioFile);
-        } catch (playError) {
-          console.error('Playback error:', playError);
-        }
+        // Use a safe play function to avoid unhandled errors
+        safePlayAudio(response.audioFile, card.id);
       } else {
         setApiMessage(`No audio file returned for ${card.content}`);
       }
     } catch (error) {
       console.error("Audio API error:", error);
       setApiMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+  
+  // Safe play function with proper error handling
+  const safePlayAudio = (url: string, cardId: string) => {
+    if (!audioElement.current) return;
+    
+    try {
+      // First pause current audio without triggering errors
+      try {
+        audioElement.current.pause();
+      } catch (pauseError) {
+        console.log("Pause error (suppressed):", pauseError);
+      }
+      
+      // Clear source and recreate audio element to avoid state issues
+      // This helps avoid "play interrupted by pause" errors
+      audioElement.current = new Audio(url);
+      
+      // Set up event listeners
+      audioElement.current.addEventListener('ended', () => {
+        console.log('Audio playback completed');
+        setPlayingAudio(null);
+      });
+      
+      audioElement.current.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e);
+        setPlayingAudio(null);
+      });
+      
+      // Use error handling for play
+      audioElement.current.play().then(() => {
+        console.log('Audio playback started successfully');
+        setPlayingAudio(cardId);
+      }).catch(playError => {
+        // Handle play errors without throwing to NextJS error handler
+        console.log("Play error (suppressed):", playError);
+      });
+    } catch (error) {
+      // Handle any other errors without throwing to NextJS
+      console.log("Audio setup error (suppressed):", error);
     }
   };
   
@@ -541,7 +575,11 @@ export default function Home() {
     
     // Pause audio when leaving a card
     if (audioElement.current) {
-      audioElement.current.pause();
+      try {
+        audioElement.current.pause();
+      } catch (e) {
+        console.log("Pause error in handleCardLeave (suppressed):", e);
+      }
     }
     
     setPlayingAudio(null);
@@ -771,11 +809,8 @@ export default function Home() {
           
           // Play audio if available and enabled
           if (response.audioFile && audioEnabled && audioElement.current) {
-            // Play audio on drag completion
-            audioElement.current.src = response.audioFile;
-            audioElement.current.load();
-            audioElement.current.play();
-            setPlayingAudio(card.id);
+            // Play audio on drag completion using our safe function
+            safePlayAudio(response.audioFile, card.id);
           }
           
           // Clear processing state after API call completes
