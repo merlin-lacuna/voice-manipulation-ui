@@ -659,13 +659,33 @@ export default function Home() {
         const destZoneNum = destZoneId ? getZoneNumber(destZoneId) : 0
         
         if (isLaneSticky(sourceZoneId, laneNumber)) {
-          // Sticky lane case
-          setErrorDialogMessage("Pass Denied")
+          // Sticky lane case - show specific hint that they're completely stuck with this style
+          
+          // Get the display name for the current lane
+          const laneDisplayName = laneDisplayNames[sourceZoneId]?.[sourceLaneName] || sourceLaneName;
+          
+          // Build the error message with the lane display name
+          setErrorDialogMessage(`Unfortunately you chose "${laneDisplayName}". The selected voice is now stuck with this speaking style. Try moving the other voices instead.`)
           setShowErrorDialog(true)
         } 
         else if (isLaneBlocking(sourceZoneId, laneNumber) && destZoneNum > sourceZoneNum) {
-          // Blocking lane case
-          setErrorDialogMessage("Pass Denied")
+          // Blocking lane case - show specific hint based on the zone
+          
+          // Get the display name for the current lane
+          const laneDisplayName = laneDisplayNames[sourceZoneId]?.[sourceLaneName] || sourceLaneName;
+          
+          // Different hint messages based on the current zone
+          let hintMessage = "";
+          if (sourceZoneId === "Zone 1") {
+            hintMessage = "Try another pitch type";
+          } else if (sourceZoneId === "Zone 2") {
+            hintMessage = "Try another talking speed";
+          } else if (sourceZoneId === "Zone 3") {
+            hintMessage = "Try another type of jargon";
+          }
+          
+          // Build the error message
+          setErrorDialogMessage(`Pass Denied. The "${laneDisplayName}" style prevents this voice from advancing. ${hintMessage}.`)
           setShowErrorDialog(true)
         }
         else if (sourceZoneId !== "holding" && destZoneId !== "holding" && destZoneNum < sourceZoneNum) {
