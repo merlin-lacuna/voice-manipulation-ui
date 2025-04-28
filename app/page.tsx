@@ -1479,101 +1479,113 @@ export default function Home() {
           {/* Wall between Zone 3 and Zone 4 */}
           {zoneVisibility["Zone 4"] && <ZoneSeparator color="blue" />}
 
-          {/* Zone 4 */}
+          {/* Zone 4 - with custom visual ordering (Lane 2, Lane 3, Lane 1) */}
           {zoneVisibility["Zone 4"] && (
             <div className="max-w-4xl mx-auto">
               <h2 className="text-xl font-semibold mb-4 pl-0.5">Accent</h2>
               <div className="flex flex-row justify-between w-full">
-                {lanes.map((lane, laneIndex) => (
-                  <div key={`Zone 4-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
-                    <div className="flex items-center mb-2">
-                      <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
-                        ${isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
-                          isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
-                        {laneDisplayNames["Zone 4"][lane]}
-                        {isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() && (
-                          <span className="ml-1 text-xs text-red-300">STICKY</span>
-                        )}
-                        {isLaneBlocking("Zone 4", laneIndex + 1) && !isLaneSticky("Zone 4", laneIndex + 1) && showBlockingIndicators() && (
-                          <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
-                        )}
-                      </div>
-                    </div>
-                    <Droppable 
-                      key={`Zone 4-${laneIndex + 1}`} 
-                      droppableId={`Zone 4-${laneIndex + 1}`} 
-                      direction="horizontal"
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          style={{ 
-                            backgroundColor: '#595959', // All Zone 4 lanes use the same color
-                            width: '100%',
-                            height: '200px',
-                            borderRadius: '0.5rem',
-                            padding: '0.5rem',
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            overflowX: 'auto',
-                            boxShadow: glowingZone === "Zone 4" ? '0 0 0 4px #fcd34d' : 
-                                       invalidZone === "Zone 4" ? '0 0 0 4px #ef4444' : 
-                                       isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
-                                       isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
-                            borderTop: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
-                                       isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
-                            borderBottom: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
-                                          isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
-                          }}
-                        >
-                          {cards.map((card, index) => {
-                            if (card.zone === "Zone 4" && card.lane === lane) {
-                              return (
-                                <Draggable key={card.id} draggableId={card.id} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className="mx-2"
-                                      style={{
-                                        ...provided.draggableProps.style,
-                                      }}
-                                      onClick={() => handleCardClick(card)}
-                                      onMouseEnter={() => handleCardHover(card)}
-                                      onMouseLeave={handleCardLeave}
-                                    >
-                                      <Card
-                                        className={cn(
-                                          "p-3 bg-pink-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
-                                          processingCard.id === card.id && "opacity-70",
-                                          (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
-                                          card.asFarAsCanGo && "border-b-4 border-purple-600"
-                                        )}
-                                      >
-                                        <p className="font-medium text-center">{card.content}</p>
-                                        {processingCard.id === card.id && (
-                                          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                                          </div>
-                                        )}
-                                      </Card>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              )
-                            }
-                            return null
-                          })}
-                          {provided.placeholder}
+                {/* Custom visual ordering for Zone 4:
+                    Visual Left position: Lane 2 (index 1)
+                    Visual Middle position: Lane 3 (index 2)
+                    Visual Right position: Lane 1 (index 0) */}
+                {[
+                  { lane: lanes[1], index: 1 }, // Lane 2 (Spanish)
+                  { lane: lanes[2], index: 2 }, // Lane 3 (Albanian)
+                  { lane: lanes[0], index: 0 }, // Lane 1 (American)
+                ].map((laneInfo) => {
+                  const lane = laneInfo.lane;
+                  const laneIndex = laneInfo.index;
+                  return (
+                    <div key={`Zone 4-lane-${laneIndex + 1}`} className="w-[calc(33.33%-0.75rem)]">
+                      <div className="flex items-center mb-2">
+                        <div className={`text-sm font-medium text-white bg-indigo-900 inline-block p-1 rounded
+                          ${isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? 'border-2 border-red-500' : 
+                            isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? 'border-2 border-orange-500' : ''}`}>
+                          {laneDisplayNames["Zone 4"][lane]}
+                          {isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() && (
+                            <span className="ml-1 text-xs text-red-300">STICKY</span>
+                          )}
+                          {isLaneBlocking("Zone 4", laneIndex + 1) && !isLaneSticky("Zone 4", laneIndex + 1) && showBlockingIndicators() && (
+                            <span className="ml-1 text-xs text-orange-300">BLOCKING</span>
+                          )}
                         </div>
-                      )}
-                    </Droppable>
-                  </div>
-                ))}
+                      </div>
+                      <Droppable 
+                        key={`Zone 4-${laneIndex + 1}`} 
+                        droppableId={`Zone 4-${laneIndex + 1}`} 
+                        direction="horizontal"
+                      >
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            style={{ 
+                              backgroundColor: '#595959', // All Zone 4 lanes use the same color
+                              width: '100%',
+                              height: '200px',
+                              borderRadius: '0.5rem',
+                              padding: '0.5rem',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflowX: 'auto',
+                              boxShadow: glowingZone === "Zone 4" ? '0 0 0 4px #fcd34d' : 
+                                         invalidZone === "Zone 4" ? '0 0 0 4px #ef4444' : 
+                                         isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '0 0 0 3px #ef4444' : 
+                                         isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '0 0 0 2px #f97316' : 'none',
+                              borderTop: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' : 
+                                         isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none',
+                              borderBottom: isLaneSticky("Zone 4", laneIndex + 1) && showStickyIndicators() ? '3px dashed #ef4444' :
+                                            isLaneBlocking("Zone 4", laneIndex + 1) && showBlockingIndicators() ? '3px dotted #f97316' : 'none'
+                            }}
+                          >
+                            {cards.map((card, index) => {
+                              if (card.zone === "Zone 4" && card.lane === lane) {
+                                return (
+                                  <Draggable key={card.id} draggableId={card.id} index={index}>
+                                    {(provided, snapshot) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        className="mx-2"
+                                        style={{
+                                          ...provided.draggableProps.style,
+                                        }}
+                                        onClick={() => handleCardClick(card)}
+                                        onMouseEnter={() => handleCardHover(card)}
+                                        onMouseLeave={handleCardLeave}
+                                      >
+                                        <Card
+                                          className={cn(
+                                            "p-3 bg-pink-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
+                                            processingCard.id === card.id && "opacity-70",
+                                            (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
+                                            card.asFarAsCanGo && "border-b-4 border-purple-600"
+                                          )}
+                                        >
+                                          <p className="font-medium text-center">{card.content}</p>
+                                          {processingCard.id === card.id && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                                              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                            </div>
+                                          )}
+                                        </Card>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                )
+                              }
+                              return null
+                            })}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
