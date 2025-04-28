@@ -101,10 +101,15 @@ export default function Home() {
   // State for audio files
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
   
+  // State to track which card is being hovered over
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  
   // State for dialogs
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
   const [errorDialogMessage, setErrorDialogMessage] = useState<string>("")
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false)
+  const [showStartDialog, setShowStartDialog] = useState<boolean>(true) // Show start dialog by default
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(false)
 
   // Check API status on initial load and periodically
   useEffect(() => {
@@ -380,76 +385,81 @@ export default function Home() {
         cardPositionsRef.current.set(id, el.getBoundingClientRect())
       }
     })
+    
+    // Reset hover state when dragging starts
+    setHoveredCard(null);
+    setPlayingAudio(null);
   }
   
-  // Handle clicking a card in holding zone to play original audio
-  const handleCardClick = async (card: CardType) => {
-    if (card.zone === "holding") {
-      setPlayingAudio(card.id)
-      setApiMessage(`Loading ${card.content} audio...`) // Show loading message
+  // Handle mouse enter (hover) on a card
+  const handleCardHover = async (card: CardType) => {
+    // Don't do anything if we're already hovering over this card
+    if (hoveredCard === card.id) return;
+    
+    // Update hover state
+    setHoveredCard(card.id);
+    
+    // Only proceed with audio if it's been enabled by user interaction
+    if (!audioEnabled) return;
+    
+    // Only play audio for cards that are in a zone
+    if (!card.zone) return;
+    
+    // Skip if a card is still processing
+    if (processingCard.id === card.id) return;
+    
+    // Use the EXACT same code pattern as the original implementation
+    // which was working for drag and drop
+    
+    setPlayingAudio(card.id);
+    setApiMessage(`Loading ${card.content} audio...`);
+    
+    try {
+      // Call API to get original audio - use the same code as original handleCardClick
+      const response = await processVoice({
+        cardName: card.content,
+        zoneName: card.zone,
+        laneName: card.lane
+      });
       
-      try {
-        // Call API to get original audio
-        const response = await processVoice({
-          cardName: card.content,
-          zoneName: "holding",
-          laneName: card.lane // Lane is now already in the format "Lane X"
-        })
-        
-        console.log("Got API response for audio:", response)
-        
-        // Check if the API call was successful
-        if (response.status === "error") {
-          throw new Error(response.message || "API returned an error");
-        }
-        
-        // Play the audio if available
-        if (response.audioFile) {
-          try {
-            setApiMessage(`Playing ${card.content}...`)
-            
-            // Create an Audio element to test if the file exists
-            const audio = new Audio(response.audioFile);
-            
-            // Set up event listeners
-            audio.oncanplaythrough = async () => {
-              console.log("Audio can play through, starting playback");
-              try {
-                await playAudio(response.audioFile as string);
-                setApiMessage(`Finished playing ${card.content}`);
-              } catch (playError) {
-                console.error("Playback error:", playError);
-                setApiMessage(`Error during playback: ${playError instanceof Error ? playError.message : String(playError)}`);
-              }
-            };
-            
-            audio.onerror = (e) => {
-              console.error("Audio loading error:", e, audio.error);
-              setApiMessage(`Error loading audio file for ${card.content}`);
-              throw new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`);
-            };
-            
-            // Start loading the audio
-            audio.load();
-          } catch (audioError) {
-            console.error("Audio setup error:", audioError);
-            setApiMessage(`Error setting up audio for ${card.content}: ${audioError instanceof Error ? audioError.message : String(audioError)}`);
-          }
-        } else {
-          setApiMessage(`No audio file returned for ${card.content}`);
-        }
-      } catch (error) {
-        console.error("Card click error:", error);
-        setApiMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      } finally {
-        setTimeout(() => {
-          setPlayingAudio(null);
-        }, 1000); // Give a delay before clearing the playing state
+      console.log("Got API response for hover audio:", response);
+      
+      // Check if the API call was successful
+      if (response.status === "error") {
+        throw new Error(response.message || "API returned an error");
       }
-    } else {
-      // If card is in a processing zone, select it to show in master details
-      setSelectedVoiceCard(card.content);
+      
+      // Play the audio if available - using the original pattern
+      if (response.audioFile) {
+        try {
+          setApiMessage(`Playing ${card.content}...`);
+          
+          // Using the original approach with Audio object
+          await playAudio(response.audioFile);
+          setApiMessage(`Finished playing ${card.content}`);
+        } catch (playError) {
+          console.error("Playback error:", playError);
+          setApiMessage(`Error during playback: ${playError instanceof Error ? playError.message : String(playError)}`);
+        }
+      } else {
+        setApiMessage(`No audio file returned for ${card.content}`);
+      }
+    } catch (error) {
+      console.error("Hover playback error:", error);
+      setApiMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
+  };
+
+  // Handle mouse leave
+  const handleCardLeave = () => {
+    setHoveredCard(null);
+    setPlayingAudio(null);
+  };
+
+  // Handle clicking a card
+  const handleCardClick = (card: CardType) => {
+    // Select the card to show its details in the master details panel regardless of zone
+    setSelectedVoiceCard(card.content);
   }
 
   const handleDragEnd = async (result: any) => {
@@ -668,13 +678,20 @@ export default function Home() {
             }))
           }
           
-          // Play audio if available
-          if (response.audioFile) {
-            playAudio(response.audioFile)
+          // Play audio if available and enabled
+          if (response.audioFile && audioEnabled) {
+            // Play audio on drag completion only if audio is enabled
+            playAudio(response.audioFile);
           }
           
           // Clear processing state after API call completes
           setProcessingCard({ id: null, zone: null, lane: null })
+          
+          // If mouse is still hovering over this card after processing, play the audio
+          if (hoveredCard === card.id && response.audioFile && audioEnabled) {
+            // Only play if audio is enabled
+            playAudio(response.audioFile);
+          }
         }).catch((error) => {
           // Handle API errors
           setApiMessage(`Error: ${error.message}`)
@@ -710,6 +727,34 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#3730A3] text-white" style={{ minWidth: "100vw" }}>
+      {/* Start Dialog to Enable Audio */}
+      <AlertDialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+        <AlertDialogContent className="bg-indigo-900 text-white border-indigo-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">Welcome to Voice Manipulation</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/90">
+              Click &quot;Start Experience&quot; to enable audio playback on hover. 
+              Cards will play their voice when you hover over them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => {
+                setShowStartDialog(false);
+                setAudioEnabled(true);
+                
+                // Create an empty audio context to satisfy the user interaction requirement
+                const silentAudio = new Audio();
+                silentAudio.play().catch(e => console.log("Silent audio failed, but user interaction registered"));
+              }}
+            >
+              Start Experience
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
         <AlertDialogContent className="bg-red-900 text-white border-red-700">
@@ -844,17 +889,19 @@ export default function Home() {
                                       ...provided.draggableProps.style,
                                     }}
                                     onClick={() => handleCardClick(card)}
+                                    onMouseEnter={() => handleCardHover(card)}
+                                    onMouseLeave={handleCardLeave}
                                   >
                                     <Card className={cn(
-                                      "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-blue-300 w-32 h-32 text-gray-800 flex flex-col justify-between",
-                                      playingAudio === card.id && "ring-2 ring-blue-500"
+                                      "p-3 bg-amber-300 shadow-md relative cursor-pointer hover:ring-2 hover:ring-green-300 w-32 h-32 text-gray-800 flex flex-col justify-between",
+                                      (playingAudio === card.id || hoveredCard === card.id) && "ring-2 ring-green-500"
                                     )}>
                                       <div className="flex flex-col items-center justify-center">
                                         <p className="font-medium text-center">{card.content}</p>
                                         <Volume2 className="h-4 w-4 text-blue-500 mt-2" />
                                       </div>
                                       <p className="text-xs text-gray-700 text-center">
-                                        Click to play
+                                        Hover to play
                                       </p>
                                       {playingAudio === card.id && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-white/70">
@@ -945,12 +992,14 @@ export default function Home() {
                                         ...provided.draggableProps.style,
                                       }}
                                       onClick={() => handleCardClick(card)}
+                                      onMouseEnter={() => handleCardHover(card)}
+                                      onMouseLeave={handleCardLeave}
                                     >
                                       <Card
                                         className={cn(
                                           "p-3 bg-amber-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
@@ -1045,12 +1094,14 @@ export default function Home() {
                                         ...provided.draggableProps.style,
                                       }}
                                       onClick={() => handleCardClick(card)}
+                                      onMouseEnter={() => handleCardHover(card)}
+                                      onMouseLeave={handleCardLeave}
                                     >
                                       <Card
                                         className={cn(
                                           "p-3 bg-green-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
@@ -1145,12 +1196,14 @@ export default function Home() {
                                         ...provided.draggableProps.style,
                                       }}
                                       onClick={() => handleCardClick(card)}
+                                      onMouseEnter={() => handleCardHover(card)}
+                                      onMouseLeave={handleCardLeave}
                                     >
                                       <Card
                                         className={cn(
                                           "p-3 bg-blue-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
@@ -1245,12 +1298,14 @@ export default function Home() {
                                         ...provided.draggableProps.style,
                                       }}
                                       onClick={() => handleCardClick(card)}
+                                      onMouseEnter={() => handleCardHover(card)}
+                                      onMouseLeave={handleCardLeave}
                                     >
                                       <Card
                                         className={cn(
                                           "p-3 bg-pink-300 shadow-md relative w-32 h-32 cursor-pointer text-gray-800 flex flex-col justify-center",
                                           processingCard.id === card.id && "opacity-70",
-                                          selectedVoiceCard === card.content && "ring-2 ring-blue-500",
+                                          (selectedVoiceCard === card.content || hoveredCard === card.id) && "ring-2 ring-green-500",
                                           card.asFarAsCanGo && "border-b-4 border-purple-600"
                                         )}
                                       >
