@@ -45,8 +45,19 @@ WORKDIR /app/frontend
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-# Copy frontend source
-COPY . .
+# Copy frontend source (excluding node_modules)
+# Only copy necessary files for the build, avoiding node_modules
+COPY app/ ./app/
+COPY components/ ./components/
+COPY hooks/ ./hooks/
+COPY lib/ ./lib/
+COPY public/ ./public/
+COPY styles/ ./styles/
+COPY next.config.mjs ./
+COPY tailwind.config.ts ./
+COPY tsconfig.json ./
+COPY postcss.config.mjs ./
+COPY components.json ./
 # Build the frontend
 RUN pnpm build
 
