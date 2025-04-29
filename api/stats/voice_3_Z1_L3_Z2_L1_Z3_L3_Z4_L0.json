@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_3_Z1_L3_Z2_L1_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Admiration",
+        "score": 0.6481
+      },
+      {
+        "name": "Interest",
+        "score": 0.364
+      },
+      {
+        "name": "Awe",
+        "score": 0.3429
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Realization",
+        "score": 0.2733
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.247
+      },
+      {
+        "name": "Calmness",
+        "score": 0.1912
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_3_Z1_L1_Z2_L2_Z3_L1_Z4_L2.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Satisfaction",
+        "score": 0.3014
+      },
+      {
+        "name": "Contentment",
+        "score": 0.2303
+      },
+      {
+        "name": "Enthusiasm",
+        "score": 0.2135
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Distress",
+        "score": 0.1467
+      },
+      {
+        "name": "Anxiety",
+        "score": 0.1268
+      },
+      {
+        "name": "Excitement",
+        "score": 0.1198
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_3_Z1_L3_Z2_L3_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Boredom",
+        "score": 0.6394
+      },
+      {
+        "name": "Annoyance",
+        "score": 0.1821
+      },
+      {
+        "name": "Calmness",
+        "score": 0.1365
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Calmness",
+        "score": 0.1811
+      },
+      {
+        "name": "Boredom",
+        "score": 0.0909
+      },
+      {
+        "name": "Interest",
+        "score": 0.0788
+      }
+    ]
+  }
+}

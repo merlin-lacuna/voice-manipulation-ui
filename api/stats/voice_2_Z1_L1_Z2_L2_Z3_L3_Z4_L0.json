@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L1_Z2_L2_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Annoyance",
+        "score": 0.4175
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.261
+      },
+      {
+        "name": "Realization",
+        "score": 0.1957
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Relief",
+        "score": 0.4397
+      },
+      {
+        "name": "Boredom",
+        "score": 0.2474
+      },
+      {
+        "name": "Realization",
+        "score": 0.2469
+      }
+    ]
+  }
+}

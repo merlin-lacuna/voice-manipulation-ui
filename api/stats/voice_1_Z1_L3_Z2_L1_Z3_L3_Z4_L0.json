@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L3_Z2_L1_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Annoyance",
+        "score": 0.5692
+      },
+      {
+        "name": "Contempt",
+        "score": 0.2253
+      },
+      {
+        "name": "Anger",
+        "score": 0.1828
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Anger",
+        "score": 0.2094
+      },
+      {
+        "name": "Anxiety",
+        "score": 0.2068
+      },
+      {
+        "name": "Distress",
+        "score": 0.1664
+      }
+    ]
+  }
+}

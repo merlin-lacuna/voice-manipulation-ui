@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_3_Z1_L3_Z2_L2_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Interest",
+        "score": 0.2633
+      },
+      {
+        "name": "Aesthetic Appreciation",
+        "score": 0.2137
+      },
+      {
+        "name": "Realization",
+        "score": 0.2124
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Contemplation",
+        "score": 0.2464
+      },
+      {
+        "name": "Boredom",
+        "score": 0.1612
+      },
+      {
+        "name": "Entrancement",
+        "score": 0.1457
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L3_Z2_L2_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Sarcasm",
+        "score": 0.4355
+      },
+      {
+        "name": "Amusement",
+        "score": 0.4051
+      },
+      {
+        "name": "Interest",
+        "score": 0.1246
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Determination",
+        "score": 0.1389
+      },
+      {
+        "name": "Doubt",
+        "score": 0.1136
+      },
+      {
+        "name": "Fear",
+        "score": 0.0901
+      }
+    ]
+  }
+}

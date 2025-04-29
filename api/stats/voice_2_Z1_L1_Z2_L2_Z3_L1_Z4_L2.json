@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L1_Z2_L2_Z3_L1_Z4_L2.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Concentration",
+        "score": 0.3665
+      },
+      {
+        "name": "Calmness",
+        "score": 0.3033
+      },
+      {
+        "name": "Realization",
+        "score": 0.2658
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Distress",
+        "score": 0.1617
+      },
+      {
+        "name": "Anger",
+        "score": 0.1367
+      },
+      {
+        "name": "Disappointment",
+        "score": 0.0983
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L3_Z2_L2_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Contemplation",
+        "score": 0.3476
+      },
+      {
+        "name": "Disappointment",
+        "score": 0.1825
+      },
+      {
+        "name": "Disapproval",
+        "score": 0.1413
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Boredom",
+        "score": 0.5218
+      },
+      {
+        "name": "Calmness",
+        "score": 0.2176
+      },
+      {
+        "name": "Interest",
+        "score": 0.1305
+      }
+    ]
+  }
+}
