@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L3_Z2_L2_Z3_L2_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Aesthetic Appreciation",
+        "score": 0.6443
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.4316
+      },
+      {
+        "name": "Interest",
+        "score": 0.3052
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Concentration",
+        "score": 0.647
+      },
+      {
+        "name": "Calmness",
+        "score": 0.358
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.2831
+      }
+    ]
+  }
+}

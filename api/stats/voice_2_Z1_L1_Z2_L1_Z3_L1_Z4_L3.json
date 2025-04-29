@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L1_Z2_L1_Z3_L1_Z4_L3.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Satisfaction",
+        "score": 0.4072
+      },
+      {
+        "name": "Calmness",
+        "score": 0.3082
+      },
+      {
+        "name": "Concentration",
+        "score": 0.2944
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Anger",
+        "score": 0.4009
+      },
+      {
+        "name": "Contempt",
+        "score": 0.2792
+      },
+      {
+        "name": "Disgust",
+        "score": 0.2462
+      }
+    ]
+  }
+}

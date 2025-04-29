@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_3_Z1_L2_Z2_L0_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Determination",
+        "score": 0.4308
+      },
+      {
+        "name": "Concentration",
+        "score": 0.4014
+      },
+      {
+        "name": "Interest",
+        "score": 0.3109
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Determination",
+        "score": 0.3033
+      },
+      {
+        "name": "Concentration",
+        "score": 0.1931
+      },
+      {
+        "name": "Excitement",
+        "score": 0.1757
+      }
+    ]
+  }
+}

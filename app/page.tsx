@@ -177,7 +177,7 @@ export default function Home() {
     },
     "Zone 1": {
       "Lane 1": "High",
-      "Lane 2": "Trembling", 
+      "Lane 2": "Raspy", 
       "Lane 3": "Low"
     },
     "Zone 2": {
@@ -192,7 +192,7 @@ export default function Home() {
     },
     "Zone 4": {
       "Lane 1": "American",
-      "Lane 2": "Spanish", 
+      "Lane 2": "Italian", 
       "Lane 3": "Albanian"
     }
   }
@@ -955,7 +955,7 @@ export default function Home() {
       <AlertDialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <AlertDialogContent className="bg-indigo-900 text-white border-indigo-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white text-xl">Welcome to Voice Manipulation</AlertDialogTitle>
+            <AlertDialogTitle className="text-white text-xl">Welcome to Voice Box Bias</AlertDialogTitle>
             <AlertDialogDescription className="text-white/90">
               Click &quot;Start Experience&quot; to enable audio playback on hover. 
               Cards will play their voice when you hover over them.
@@ -1007,7 +1007,7 @@ export default function Home() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white text-xl">Mission accomplished</AlertDialogTitle>
             <AlertDialogDescription className="text-white/90">
-              Thankyou for helping to train the bias
+              Thank you for helping to train the bias
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L3_Z2_L3_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Realization",
+        "score": 0.3009
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.2634
+      },
+      {
+        "name": "Calmness",
+        "score": 0.1767
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Contemplation",
+        "score": 0.553
+      },
+      {
+        "name": "Doubt",
+        "score": 0.3935
+      },
+      {
+        "name": "Awkwardness",
+        "score": 0.324
+      }
+    ]
+  }
+}

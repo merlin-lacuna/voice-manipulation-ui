@@ -1,35 +1,34 @@
 {
   "source": {
-    "type": "registry_file",
-    "file_id": "feedd978-4671-4ed2-ac13-dc63cdc91e5f"
+    "filename": "voice_1_Z1_L2_Z2_L0_Z3_L0_Z4_L0.mp3"
   },
   "top_emotions": {
     "language": [
       {
         "name": "Calmness",
-        "score": 0.1388
+        "score": 0.3381
       },
       {
-        "name": "Concentration",
-        "score": 0.1094
+        "name": "Contemplation",
+        "score": 0.2694
       },
       {
-        "name": "Satisfaction",
-        "score": 0.0877
+        "name": "Realization",
+        "score": 0.2083
       }
     ],
     "prosody": [
       {
-        "name": "Determination",
-        "score": 0.5419
+        "name": "Calmness",
+        "score": 0.237
+      },
+      {
+        "name": "Boredom",
+        "score": 0.1924
       },
       {
         "name": "Concentration",
-        "score": 0.4932
-      },
-      {
-        "name": "Excitement",
-        "score": 0.3243
+        "score": 0.1879
       }
     ]
   }

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L3_Z2_L1_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Contemplation",
+        "score": 0.402
+      },
+      {
+        "name": "Realization",
+        "score": 0.2014
+      },
+      {
+        "name": "Calmness",
+        "score": 0.1892
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Relief",
+        "score": 0.4547
+      },
+      {
+        "name": "Calmness",
+        "score": 0.3302
+      },
+      {
+        "name": "Contentment",
+        "score": 0.3235
+      }
+    ]
+  }
+}

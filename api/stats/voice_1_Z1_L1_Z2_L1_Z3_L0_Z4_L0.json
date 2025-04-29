@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L1_Z2_L1_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Interest",
+        "score": 0.4562
+      },
+      {
+        "name": "Confusion",
+        "score": 0.368
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.3672
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Anxiety",
+        "score": 0.257
+      },
+      {
+        "name": "Excitement",
+        "score": 0.257
+      },
+      {
+        "name": "Fear",
+        "score": 0.1893
+      }
+    ]
+  }
+}

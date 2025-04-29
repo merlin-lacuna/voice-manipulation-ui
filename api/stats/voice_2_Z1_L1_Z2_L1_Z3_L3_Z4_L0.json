@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L1_Z2_L1_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Annoyance",
+        "score": 0.4088
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.2802
+      },
+      {
+        "name": "Disapproval",
+        "score": 0.1813
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Interest",
+        "score": 0.2538
+      },
+      {
+        "name": "Excitement",
+        "score": 0.2061
+      },
+      {
+        "name": "Amusement",
+        "score": 0.1681
+      }
+    ]
+  }
+}

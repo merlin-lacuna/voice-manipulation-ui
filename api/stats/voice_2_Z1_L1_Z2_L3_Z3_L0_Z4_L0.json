@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_2_Z1_L1_Z2_L3_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Contemplation",
+        "score": 0.6211
+      },
+      {
+        "name": "Realization",
+        "score": 0.2807
+      },
+      {
+        "name": "Aesthetic Appreciation",
+        "score": 0.2122
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Contemplation",
+        "score": 0.471
+      },
+      {
+        "name": "Relief",
+        "score": 0.2991
+      },
+      {
+        "name": "Realization",
+        "score": 0.2843
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L3_Z2_L2_Z3_L0_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Determination",
+        "score": 0.3601
+      },
+      {
+        "name": "Annoyance",
+        "score": 0.3242
+      },
+      {
+        "name": "Realization",
+        "score": 0.3023
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Calmness",
+        "score": 0.3789
+      },
+      {
+        "name": "Determination",
+        "score": 0.2751
+      },
+      {
+        "name": "Contemplation",
+        "score": 0.2718
+      }
+    ]
+  }
+}

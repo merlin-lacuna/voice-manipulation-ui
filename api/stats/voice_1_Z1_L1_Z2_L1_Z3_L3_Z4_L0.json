@@ -1,0 +1,35 @@
+{
+  "source": {
+    "filename": "voice_1_Z1_L1_Z2_L1_Z3_L3_Z4_L0.mp3"
+  },
+  "top_emotions": {
+    "language": [
+      {
+        "name": "Sarcasm",
+        "score": 0.2718
+      },
+      {
+        "name": "Boredom",
+        "score": 0.2694
+      },
+      {
+        "name": "Calmness",
+        "score": 0.1891
+      }
+    ],
+    "prosody": [
+      {
+        "name": "Confusion",
+        "score": 0.4691
+      },
+      {
+        "name": "Distress",
+        "score": 0.395
+      },
+      {
+        "name": "Anger",
+        "score": 0.3132
+      }
+    ]
+  }
+}
