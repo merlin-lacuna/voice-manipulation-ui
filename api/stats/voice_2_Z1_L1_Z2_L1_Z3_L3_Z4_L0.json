@@ -2,33 +2,33 @@
   "source": {
     "filename": "voice_2_Z1_L1_Z2_L1_Z3_L3_Z4_L0.mp3"
   },
-  "top_emotions": {
+  "emotions": {
     "language": [
       {
-        "name": "Annoyance",
-        "score": 0.4088
+        "name": "Calmness",
+        "score": 0.0738
       },
       {
-        "name": "Contemplation",
-        "score": 0.2802
+        "name": "Concentration",
+        "score": 0.0417
       },
       {
-        "name": "Disapproval",
-        "score": 0.1813
+        "name": "Determination",
+        "score": 0.0168
       }
     ],
     "prosody": [
       {
-        "name": "Interest",
-        "score": 0.2538
+        "name": "Calmness",
+        "score": 0.0327
       },
       {
-        "name": "Excitement",
-        "score": 0.2061
+        "name": "Concentration",
+        "score": 0.0205
       },
       {
-        "name": "Amusement",
-        "score": 0.1681
+        "name": "Determination",
+        "score": 0.0396
       }
     ]
   }

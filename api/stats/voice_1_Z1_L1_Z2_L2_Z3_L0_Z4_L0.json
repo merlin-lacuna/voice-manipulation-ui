@@ -2,19 +2,19 @@
   "source": {
     "filename": "voice_1_Z1_L1_Z2_L2_Z3_L0_Z4_L0.mp3"
   },
-  "top_emotions": {
+  "emotions": {
     "language": [
+      {
+        "name": "Calmness",
+        "score": 0.0729
+      },
+      {
+        "name": "Concentration",
+        "score": 0.1098
+      },
       {
         "name": "Determination",
         "score": 0.3601
-      },
-      {
-        "name": "Annoyance",
-        "score": 0.3242
-      },
-      {
-        "name": "Realization",
-        "score": 0.3023
       }
     ],
     "prosody": [
@@ -23,12 +23,12 @@
         "score": 0.2434
       },
       {
-        "name": "Determination",
-        "score": 0.2158
+        "name": "Concentration",
+        "score": 0.0803
       },
       {
-        "name": "Boredom",
-        "score": 0.1854
+        "name": "Determination",
+        "score": 0.2158
       }
     ]
   }

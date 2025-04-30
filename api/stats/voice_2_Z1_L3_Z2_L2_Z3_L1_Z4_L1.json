@@ -2,29 +2,29 @@
   "source": {
     "filename": "voice_2_Z1_L3_Z2_L2_Z3_L1_Z4_L1.mp3"
   },
-  "top_emotions": {
+  "emotions": {
     "language": [
-      {
-        "name": "Concentration",
-        "score": 0.3665
-      },
       {
         "name": "Calmness",
         "score": 0.3033
       },
       {
-        "name": "Realization",
-        "score": 0.2658
+        "name": "Concentration",
+        "score": 0.3665
+      },
+      {
+        "name": "Determination",
+        "score": 0.0631
       }
     ],
     "prosody": [
       {
-        "name": "Concentration",
-        "score": 0.7111
-      },
-      {
         "name": "Calmness",
         "score": 0.6059
+      },
+      {
+        "name": "Concentration",
+        "score": 0.7111
       },
       {
         "name": "Determination",

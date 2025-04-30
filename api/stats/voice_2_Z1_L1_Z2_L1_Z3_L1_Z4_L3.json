@@ -2,12 +2,8 @@
   "source": {
     "filename": "voice_2_Z1_L1_Z2_L1_Z3_L1_Z4_L3.mp3"
   },
-  "top_emotions": {
+  "emotions": {
     "language": [
-      {
-        "name": "Satisfaction",
-        "score": 0.4072
-      },
       {
         "name": "Calmness",
         "score": 0.3082
@@ -15,20 +11,24 @@
       {
         "name": "Concentration",
         "score": 0.2944
+      },
+      {
+        "name": "Determination",
+        "score": 0.0778
       }
     ],
     "prosody": [
       {
-        "name": "Anger",
-        "score": 0.4009
+        "name": "Calmness",
+        "score": 0.0235
       },
       {
-        "name": "Contempt",
-        "score": 0.2792
+        "name": "Concentration",
+        "score": 0.1803
       },
       {
-        "name": "Disgust",
-        "score": 0.2462
+        "name": "Determination",
+        "score": 0.0806
       }
     ]
   }
