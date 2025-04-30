@@ -2,7 +2,7 @@
   "source": {
     "filename": "voice_2_Z1_L1_Z2_L2_Z3_L1_Z4_L0.mp3"
   },
-  "emotions": {
+  "top_emotions": {
     "language": [
       {
         "name": "Calmness",
