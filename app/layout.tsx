@@ -6,8 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Voice Manipulation UI",
-  description: "A vertical kanban board for voice manipulation",
+  title: "Vocal Box Bias",
+  description: "A game examining bias in speech analysis",
 }
 
 export default function RootLayout({

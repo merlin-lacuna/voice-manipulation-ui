@@ -276,16 +276,28 @@ def process_audio(voice_name: str, zone_name: str, lane_name: str, prev_zone_nam
     # Full path to the audio file
     file_path = os.path.join(VOICE_FILES_DIR, filename)
     
-    # Verify file exists
-    if not os.path.exists(file_path):
-        print(f"Warning: Expected file not found: {file_path}")
+    # Log the voice file we're looking for
+    print(f"Looking for voice file: {file_path}")
+    
+    # Verify file exists and log result
+    if os.path.exists(file_path):
+        print(f"MATCH: Found exact voice file match: {os.path.basename(file_path)}")
+        return file_path
+    else:
+        print(f"NO MATCH: Voice file not found: {os.path.basename(file_path)}")
         # Use fallback file if the specific one doesn't exist
         voice_number = voice_name.split(" ")[1]
         fallback_file = os.path.join(VOICE_FILES_DIR, f"voice_{voice_number}_Z1_L0_Z2_L0_Z3_L0_Z4_L0.mp3")
+        
+        # Check if fallback exists and log result
         if os.path.exists(fallback_file):
+            print(f"FALLBACK: Using default voice file: {os.path.basename(fallback_file)}")
             return fallback_file
-        raise Exception(f"Voice file not found: {file_path}")
+        else:
+            print(f"ERROR: No fallback voice file found for voice {voice_number}")
+            raise Exception(f"Voice file not found: {file_path} and no fallback available")
     
+    # This line should never be reached due to the above logic
     return file_path
 
 def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> MetadataItem:
@@ -327,6 +339,12 @@ def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> Metada
     
     print(f"Looking for stats file: {stats_path}")
     
+    # Check if the stats file exists and log result
+    if os.path.exists(stats_path):
+        print(f"MATCH: Found exact stats file match: {os.path.basename(stats_path)}")
+    else:
+        print(f"NO MATCH: Stats file not found: {os.path.basename(stats_path)}")
+    
     # Get the correct spectrogram filename based on voice traversal
     spectrogram_filename = "_".join(filename_parts) + ".png"
     spectrogram_path = os.path.join(SPECTROGRAMS_DIR, spectrogram_filename)
@@ -344,12 +362,17 @@ def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> Metada
         print(f"NO MATCH: Exact spectrogram not found: {spectrogram_filename}")
         # Try to find any spectrogram for this voice as fallback
         if not os.path.exists(spectrogram_path) and os.path.exists(SPECTROGRAMS_DIR):
+            fallback_found = False
             for f in os.listdir(SPECTROGRAMS_DIR):
                 if f.startswith(f"voice_{voice_number}_") and f.endswith(".png"):
                     fallback_spectrogram = f
                     print(f"AUTO-FALLBACK: Will use {fallback_spectrogram} as fallback")
                     spectrogram_url = f"/spectrograms/{fallback_spectrogram}"
+                    fallback_found = True
                     break
+            
+            if not fallback_found:
+                print(f"NO FALLBACK: No alternative spectrograms found for voice {voice_number}")
     
     # Default response with spectrogram data
     metadata = MetadataItem(
@@ -382,29 +405,43 @@ def generate_metadata(voice_name: str, zone_name: str, lane_name: str) -> Metada
                     ]
                     metadata.prosody = prosody_data
         else:
-            print(f"Stats file not found: {stats_path}")
-            # Try sample file as fallback
+            # We already logged the missing file above, now try sample file as fallback
             sample_path = os.path.join(STATS_DIR, "sample_voice_analysis.json")
+            
+            # Track if we found fallback data
+            fallback_data_loaded = False
+            
             if os.path.exists(sample_path):
-                print(f"Using sample stats file: {sample_path}")
-                with open(sample_path, 'r') as f:
-                    stats_data = json.load(f)
+                print(f"FALLBACK: Using generic sample stats file: {os.path.basename(sample_path)}")
+                try:
+                    with open(sample_path, 'r') as f:
+                        stats_data = json.load(f)
+                    fallback_data_loaded = True
+                    
+                    # Convert language data
+                    if "top_emotions" in stats_data and "language" in stats_data["top_emotions"]:
+                        language_data = [
+                            EmotionData(name=item["name"], score=item["score"])
+                            for item in stats_data["top_emotions"]["language"]
+                        ]
+                        metadata.language = language_data
+                    
+                    # Convert prosody data
+                    if "top_emotions" in stats_data and "prosody" in stats_data["top_emotions"]:
+                        prosody_data = [
+                            EmotionData(name=item["name"], score=item["score"])
+                            for item in stats_data["top_emotions"]["prosody"]
+                        ]
+                        metadata.prosody = prosody_data
+                except Exception as e:
+                    print(f"ERROR: Failed to load fallback stats file: {e}")
+                    fallback_data_loaded = False
+            else:
+                print(f"NO FALLBACK: Sample stats file not found at {os.path.basename(sample_path)}")
                 
-                # Convert language data
-                if "top_emotions" in stats_data and "language" in stats_data["top_emotions"]:
-                    language_data = [
-                        EmotionData(name=item["name"], score=item["score"])
-                        for item in stats_data["top_emotions"]["language"]
-                    ]
-                    metadata.language = language_data
-                
-                # Convert prosody data
-                if "top_emotions" in stats_data and "prosody" in stats_data["top_emotions"]:
-                    prosody_data = [
-                        EmotionData(name=item["name"], score=item["score"])
-                        for item in stats_data["top_emotions"]["prosody"]
-                    ]
-                    metadata.prosody = prosody_data
+            # If no fallback data was loaded, we'll just return the metadata with default empty values
+            if not fallback_data_loaded:
+                print("INFO: Using empty default metadata (no stats available)")
     except Exception as e:
         print(f"Error loading stats file {stats_path}: {e}")
     
@@ -432,23 +469,39 @@ async def process_voice(request: VoiceProcessRequest):
             voice_number = request.cardName.split(" ")[1]
             voice_path = VOICE_FILES.get(request.cardName)
             
+            # Use the same consistent logging pattern
             if voice_path:
-                print(f"Found voice path for {request.cardName}: {voice_path}")
+                print(f"Looking for voice file: {voice_path}")
+                
                 if os.path.exists(voice_path):
-                    print(f"File exists at {voice_path}")
+                    print(f"MATCH: Found exact voice file match: {os.path.basename(voice_path)}")
                     # Serve the file directly
                     result["audioFile"] = f"/processed/{os.path.basename(voice_path)}"
                     result["message"] = f"Playing {request.cardName} in holding zone"
                 else:
-                    print(f"File does not exist at {voice_path}")
-                    # List files in the voices directory
+                    print(f"NO MATCH: Voice file not found: {os.path.basename(voice_path)}")
+                    
+                    # Try to find any file for this voice as fallback
+                    fallback_found = False
                     if os.path.exists(VOICE_FILES_DIR):
                         voices_files = os.listdir(VOICE_FILES_DIR)
-                        print(f"Files in {VOICE_FILES_DIR}: {voices_files[:5]}...")
-                    result["status"] = "error"
-                    result["message"] = f"Voice file {voice_path} not found"
+                        print(f"Searching for fallback in {VOICE_FILES_DIR}...")
+                        
+                        for file in voices_files:
+                            if file.startswith(f"voice_{voice_number}_") and file.endswith(".mp3"):
+                                fallback_path = os.path.join(VOICE_FILES_DIR, file)
+                                print(f"FALLBACK: Found alternative voice file: {file}")
+                                result["audioFile"] = f"/processed/{file}"
+                                result["message"] = f"Playing fallback for {request.cardName}"
+                                fallback_found = True
+                                break
+                    
+                    if not fallback_found:
+                        print(f"NO FALLBACK: No alternative voice files found for {request.cardName}")
+                        result["status"] = "error"
+                        result["message"] = f"Voice file not found for {request.cardName}"
             else:
-                print(f"No voice path found for {request.cardName}. Available voices: {list(VOICE_FILES.keys())}")
+                print(f"ERROR: No voice path configured for {request.cardName}. Available voices: {list(VOICE_FILES.keys())}")
                 result["status"] = "error" 
                 result["message"] = f"Voice not configured: {request.cardName}"
         else:
