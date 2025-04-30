@@ -6,30 +6,30 @@
   "top_emotions": {
     "language": [
       {
-        "name": "Happiness",
-        "score": 0.6
+        "name": "Calmness",
+        "score": 0.2302
       },
       {
-        "name": "Excitement",
-        "score": 0.6
+        "name": "Concentration",
+        "score": 0.1044
       },
       {
-        "name": "Confidence",
-        "score": 0.6
+        "name": "Determination",
+        "score": 0.0241
       }
     ],
     "prosody": [
       {
-        "name": "Enthusiasm",
-        "score": 0.6
+        "name": "Calmness",
+        "score": 0.1095
       },
       {
-        "name": "Energy",
-        "score": 0.6
+        "name": "Concentration",
+        "score": 0.0712
       },
       {
-        "name": "Warmth",
-        "score": 0.6
+        "name": "Determination",
+        "score": 0.2162
       }
     ]
   }
