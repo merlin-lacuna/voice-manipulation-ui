@@ -117,25 +117,54 @@ export default function Home() {
   const [showStartDialog, setShowStartDialog] = useState<boolean>(true) // Show start dialog by default
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false)
   
-  // Initialize the audio element after user interaction
+  // Initialize the audio element after user interaction - improved reliability
   const initAudio = useCallback(() => {
     // Create a single audio element that we'll reuse
     if (!audioElement.current) {
+      // Create new audio element
       audioElement.current = new Audio();
-      audioElement.current.autoplay = false; // Don't autoplay on src change
       
-      // Set up event listeners
-      audioElement.current.addEventListener('ended', () => {
+      // Configure properties
+      audioElement.current.autoplay = false; // Don't autoplay on src change
+      audioElement.current.preload = 'auto'; // Preload audio when possible
+      
+      // Function for event listener cleanup
+      const cleanupAudioListeners = () => {
+        if (audioElement.current) {
+          audioElement.current.removeEventListener('ended', handleAudioEnded);
+          audioElement.current.removeEventListener('error', handleAudioError);
+          audioElement.current.removeEventListener('play', handleAudioPlay);
+          audioElement.current.removeEventListener('pause', handleAudioPause);
+        }
+      };
+      
+      // Define event handlers outside of addEventListener to allow cleanup
+      const handleAudioEnded = () => {
         console.log('Audio playback completed');
         setPlayingAudio(null);
-      });
+      };
       
-      audioElement.current.addEventListener('error', (e) => {
+      const handleAudioError = (e: Event) => {
         console.error('Audio playback error:', e);
         setPlayingAudio(null);
-      });
+      };
       
-      // We'll create and manage the listener in a separate effect
+      const handleAudioPlay = () => {
+        console.log('Audio playback started');
+      };
+      
+      const handleAudioPause = () => {
+        console.log('Audio playback paused');
+      };
+      
+      // Set up event listeners with proper cleanup
+      audioElement.current.addEventListener('ended', handleAudioEnded);
+      audioElement.current.addEventListener('error', handleAudioError);
+      audioElement.current.addEventListener('play', handleAudioPlay);
+      audioElement.current.addEventListener('pause', handleAudioPause);
+      
+      // Register cleanup as a property on the audio element to allow cleanup in other functions
+      (audioElement.current as any).cleanup = cleanupAudioListeners;
       
       console.log('Audio element and listeners initialized');
     }
@@ -143,6 +172,27 @@ export default function Home() {
     setAudioEnabled(true);
   }, [])
 
+  // Audio cleanup effect to prevent memory leaks
+  useEffect(() => {
+    // Return cleanup function
+    return () => {
+      // If we have an audio element with a cleanup function, call it
+      if (audioElement.current && (audioElement.current as any).cleanup) {
+        (audioElement.current as any).cleanup();
+      }
+      
+      // If we have an audio element, pause it and nullify
+      if (audioElement.current) {
+        try {
+          audioElement.current.pause();
+          audioElement.current.src = '';
+        } catch (e) {
+          console.log("Error cleaning up audio element:", e);
+        }
+      }
+    };
+  }, []);
+  
   // Check API status on initial load and periodically
   useEffect(() => {
     const checkStatus = async () => {
@@ -254,10 +304,14 @@ export default function Home() {
     }
   }, [showResetDialog]);
   
-  // Global mouse move listener to detect when mouse leaves a card
+  // Global mouse move listener to detect when mouse leaves a card - using more reliable approach
   useEffect(() => {
     // Only set up if audio is enabled
     if (!audioEnabled) return;
+    
+    // Create a new AbortController for each listener setup
+    const controller = new AbortController();
+    const signal = controller.signal;
     
     const handleMouseMove = (e: MouseEvent) => {
       // If we have a hovered card and audio is playing
@@ -269,32 +323,51 @@ export default function Home() {
         // Get card position
         const rect = cardElement.getBoundingClientRect();
         
-        // Check if mouse is outside the card
+        // Add a small buffer zone around the card (5px) to prevent flicker at the edges
+        const bufferZone = 5;
+        
+        // Check if mouse is outside the card with buffer
         const isOutside = 
-          e.clientX < rect.left || 
-          e.clientX > rect.right || 
-          e.clientY < rect.top || 
-          e.clientY > rect.bottom;
+          e.clientX < (rect.left - bufferZone) || 
+          e.clientX > (rect.right + bufferZone) || 
+          e.clientY < (rect.top - bufferZone) || 
+          e.clientY > (rect.bottom + bufferZone);
         
         // If mouse is outside the card and audio is playing
         if (isOutside && audioElement.current) {
-          console.log('Mouse outside card bounds, stopping audio', rect, e.clientX, e.clientY);
-          try {
-            audioElement.current.pause();
-          } catch (e) {
-            console.log("Pause error on mouse leave (suppressed):", e);
-          }
-          setPlayingAudio(null);
-          setHoveredCard(null);
+          console.log('Mouse outside card bounds, stopping audio');
+          
+          // Implement a small debounce to prevent flicker at boundaries
+          // Use requestAnimationFrame for better performance
+          requestAnimationFrame(() => {
+            // Check again if we're still outside (helps with quick mouse movements)
+            const newRect = cardElement.getBoundingClientRect();
+            const isStillOutside = 
+              e.clientX < (newRect.left - bufferZone) || 
+              e.clientX > (newRect.right + bufferZone) || 
+              e.clientY < (newRect.top - bufferZone) || 
+              e.clientY > (newRect.bottom + bufferZone);
+              
+            if (isStillOutside && audioElement.current) {
+              try {
+                audioElement.current.pause();
+                audioElement.current.currentTime = 0;
+              } catch (err) {
+                console.log("Pause error on mouse leave (suppressed):", err);
+              }
+              setPlayingAudio(null);
+              setHoveredCard(null);
+            }
+          });
         }
       }
     };
     
-    // Add the event listener
-    document.addEventListener('mousemove', handleMouseMove);
+    // Add the event listener with the AbortController signal
+    document.addEventListener('mousemove', handleMouseMove, { signal });
     
-    // Remove on cleanup
-    return () => document.removeEventListener('mousemove', handleMouseMove);
+    // Remove on cleanup using AbortController
+    return () => controller.abort();
   }, [audioEnabled, hoveredCard, playingAudio]);
   
   // Effect to update historical zone presence based on cards
@@ -516,10 +589,15 @@ export default function Home() {
     setHoveredCard(null);
     setPlayingAudio(null);
     
-    // Stop any currently playing audio
+    // Stop any currently playing audio with enhanced error handling
     if (audioElement.current) {
       try {
-        audioElement.current.pause();
+        // Check if audio is actually playing before calling pause
+        if (!audioElement.current.paused) {
+          audioElement.current.pause();
+        }
+        // Always reset position for consistent behavior
+        audioElement.current.currentTime = 0;
       } catch (e) {
         console.log("Pause error in handleDragStart (suppressed):", e);
       }
@@ -527,7 +605,7 @@ export default function Home() {
     }
   }
   
-  // Create a DIRECT approach with no state dependencies
+  // Play audio for a card using improved reliability
   const playAudioForCard = async (card: CardType) => {
     if (!audioEnabled || !audioElement.current) return;
     
@@ -556,8 +634,26 @@ export default function Home() {
       if (response.audioFile) {
         setApiMessage(`Playing ${card.content}...`);
         
-        // Use a safe play function to avoid unhandled errors
-        safePlayAudio(response.audioFile, card.id);
+        // Cache check for better performance - check if URL has changed
+        const isSameAudio = audioElement.current.src === response.audioFile;
+        
+        if (!isSameAudio) {
+          // Use our improved audio play function
+          safePlayAudio(response.audioFile, card.id);
+        } else {
+          // If it's the same audio file we already loaded, just restart playback
+          // for better performance
+          if (audioElement.current.paused || audioElement.current.ended) {
+            audioElement.current.currentTime = 0;
+            audioElement.current.play()
+              .then(() => {
+                setPlayingAudio(card.id);
+              })
+              .catch(playError => {
+                console.log("Play error (suppressed):", playError);
+              });
+          }
+        }
       } else {
         setApiMessage(`No audio file returned for ${card.content}`);
       }
@@ -567,40 +663,81 @@ export default function Home() {
     }
   };
   
-  // Safe play function with proper error handling
+  // Improved safe play function with better error handling and performance
   const safePlayAudio = (url: string, cardId: string) => {
     if (!audioElement.current) return;
     
     try {
       // First pause current audio without triggering errors
       try {
-        audioElement.current.pause();
+        // Check if the audio is actually playing before pausing
+        if (!audioElement.current.paused) {
+          audioElement.current.pause();
+        }
+        // Always reset position
+        audioElement.current.currentTime = 0;
       } catch (pauseError) {
         console.log("Pause error (suppressed):", pauseError);
       }
       
-      // Clear source and recreate audio element to avoid state issues
-      // This helps avoid "play interrupted by pause" errors
-      audioElement.current = new Audio(url);
+      // Clean up any existing event listeners to prevent memory leaks
+      if ((audioElement.current as any).cleanup) {
+        (audioElement.current as any).cleanup();
+      }
       
-      // Set up event listeners
-      audioElement.current.addEventListener('ended', () => {
+      // Set new source instead of recreating the entire element
+      // This is more efficient and prevents memory leaks
+      audioElement.current.src = url;
+      
+      // Function for event listener cleanup - recreate for this instance
+      const cleanupAudioListeners = () => {
+        if (audioElement.current) {
+          audioElement.current.removeEventListener('ended', handleAudioEnded);
+          audioElement.current.removeEventListener('error', handleAudioError);
+          audioElement.current.removeEventListener('play', handleAudioPlay);
+          audioElement.current.removeEventListener('pause', handleAudioPause);
+        }
+      };
+      
+      // Define event handlers outside of addEventListener to allow cleanup
+      const handleAudioEnded = () => {
         console.log('Audio playback completed');
         setPlayingAudio(null);
-      });
+      };
       
-      audioElement.current.addEventListener('error', (e) => {
+      const handleAudioError = (e: Event) => {
         console.error('Audio playback error:', e);
         setPlayingAudio(null);
-      });
+      };
       
-      // Use error handling for play
+      const handleAudioPlay = () => {
+        console.log('Audio playback started');
+      };
+      
+      const handleAudioPause = () => {
+        console.log('Audio playback paused');
+      };
+      
+      // Set up event listeners with proper cleanup
+      audioElement.current.addEventListener('ended', handleAudioEnded);
+      audioElement.current.addEventListener('error', handleAudioError);
+      audioElement.current.addEventListener('play', handleAudioPlay);
+      audioElement.current.addEventListener('pause', handleAudioPause);
+      
+      // Register cleanup function for later use
+      (audioElement.current as any).cleanup = cleanupAudioListeners;
+      
+      // Use error handling for play with proper promise handling
       audioElement.current.play().then(() => {
         console.log('Audio playback started successfully');
         setPlayingAudio(cardId);
       }).catch(playError => {
         // Handle play errors without throwing to NextJS error handler
         console.log("Play error (suppressed):", playError);
+        
+        // Some browsers require user interaction to play audio
+        // If we get a play error, we'll update the UI but not crash
+        setApiMessage("Audio play requires interaction. Please click first.");
       });
     } catch (error) {
       // Handle any other errors without throwing to NextJS
@@ -608,7 +745,7 @@ export default function Home() {
     }
   };
   
-  // Handle mouse enter (hover) on a card - extremely simple now
+  // Handle mouse enter (hover) on a card using a more reliable approach
   const handleCardHover = (card: CardType) => {
     // Don't do anything if we're already hovering over this card
     if (hoveredCard === card.id) return;
@@ -622,14 +759,17 @@ export default function Home() {
     }
   };
 
-  // Handle mouse leave - extremely simple now
+  // Handle mouse leave with better reliability
   const handleCardLeave = () => {
+    // Clear hover state
     setHoveredCard(null);
     
     // Pause audio when leaving a card
     if (audioElement.current) {
       try {
         audioElement.current.pause();
+        // Reset position to beginning for next play
+        audioElement.current.currentTime = 0;
       } catch (e) {
         console.log("Pause error in handleCardLeave (suppressed):", e);
       }
@@ -881,9 +1021,27 @@ export default function Home() {
           }
           
           // Play audio if available and enabled
-          if (response.audioFile && audioEnabled && audioElement.current) {
-            // Play audio on drag completion using our safe function
-            safePlayAudio(response.audioFile, card.id);
+          if (response.audioFile && audioEnabled) {
+            // Use a slight delay to ensure the card has fully settled at its new position
+            // This helps prevent the audio from playing and then immediately stopping
+            // if the mouse isn't over the card after drop
+            setTimeout(() => {
+              // Check if mouse is still over the card after drop and positioning is complete
+              const cardElement = document.querySelector(`[data-rbd-draggable-id="${card.id}"]`);
+              if (cardElement) {
+                const rect = cardElement.getBoundingClientRect();
+                const isMouseOverCard = 
+                  mousePosition.x >= rect.left && 
+                  mousePosition.x <= rect.right && 
+                  mousePosition.y >= rect.top && 
+                  mousePosition.y <= rect.bottom;
+                
+                if (isMouseOverCard) {
+                  // Play audio on drag completion using our safe function
+                  safePlayAudio(response.audioFile, card.id);
+                }
+              }
+            }, 100);
           }
           
           // Clear processing state after API call completes
